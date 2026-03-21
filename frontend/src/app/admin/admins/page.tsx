@@ -17,6 +17,18 @@ export default function AdminAdminsPage() {
   const tierChain: Record<string, string[]> = { national: ['national', 'state'], state: ['district'], district: ['taluka'], taluka: [] };
   const allowedTiers = tierChain[user?.tier || ''] || [];
 
+  const handleOpenCreate = () => {
+    setForm({
+      name: '', email: '', tier: '',
+      jurisdiction: {
+        state: user?.jurisdiction?.state || '',
+        district: user?.jurisdiction?.district || '',
+        taluka: user?.jurisdiction?.taluka || ''
+      }
+    });
+    setShowCreate(true);
+  };
+
   useEffect(() => { loadAdmins(); }, []);
 
   async function loadAdmins() {
@@ -51,7 +63,7 @@ export default function AdminAdminsPage() {
       <nav className="bg-white shadow-sm border-b sticky top-0 z-40"><div className="max-w-4xl mx-auto px-6 py-3 flex items-center gap-4">
         <Link href="/admin/dashboard" className="text-gray-400 hover:text-primary text-xl">←</Link>
         <h1 className="font-bold text-lg text-gray-800">Manage Administrators</h1>
-        {allowedTiers.length > 0 && <button onClick={() => setShowCreate(!showCreate)} className="ml-auto btn-accent text-sm px-4 py-2">+ New Admin</button>}
+        {allowedTiers.length > 0 && <button onClick={showCreate ? () => setShowCreate(false) : handleOpenCreate} className="ml-auto btn-accent text-sm px-4 py-2">{showCreate ? 'Close' : '+ New Admin'}</button>}
       </div></nav>
 
       <main className="max-w-4xl mx-auto px-6 py-8 page-enter">
@@ -76,13 +88,13 @@ export default function AdminAdminsPage() {
                 </select>
               </div>
               {(form.tier === 'state' || form.tier === 'district' || form.tier === 'taluka') && (
-                <div><label className="label">State</label><input value={form.jurisdiction.state} onChange={e => setForm(p => ({...p, jurisdiction: {...p.jurisdiction, state: e.target.value}}))} className="input-field" /></div>
+                <div><label className="label">State</label><input value={form.jurisdiction.state} onChange={e => setForm(p => ({...p, jurisdiction: {...p.jurisdiction, state: e.target.value}}))} className="input-field" disabled={!!user?.jurisdiction?.state} /></div>
               )}
               {(form.tier === 'district' || form.tier === 'taluka') && (
-                <div><label className="label">District</label><input value={form.jurisdiction.district} onChange={e => setForm(p => ({...p, jurisdiction: {...p.jurisdiction, district: e.target.value}}))} className="input-field" /></div>
+                <div><label className="label">District</label><input value={form.jurisdiction.district} onChange={e => setForm(p => ({...p, jurisdiction: {...p.jurisdiction, district: e.target.value}}))} className="input-field" disabled={!!user?.jurisdiction?.district} /></div>
               )}
               {form.tier === 'taluka' && (
-                <div><label className="label">Taluka</label><input value={form.jurisdiction.taluka} onChange={e => setForm(p => ({...p, jurisdiction: {...p.jurisdiction, taluka: e.target.value}}))} className="input-field" /></div>
+                <div><label className="label">Taluka</label><input value={form.jurisdiction.taluka} onChange={e => setForm(p => ({...p, jurisdiction: {...p.jurisdiction, taluka: e.target.value}}))} className="input-field" disabled={!!user?.jurisdiction?.taluka} /></div>
               )}
             </div>
             <div className="flex gap-3 mt-6">

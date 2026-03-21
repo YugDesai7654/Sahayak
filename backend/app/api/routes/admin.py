@@ -482,14 +482,33 @@ async def deactivate_officer(officer_id: str, admin: Admin = Depends(require_adm
 
 @router.get("/analytics/schemes")
 async def scheme_analytics(admin: Admin = Depends(require_admin)):
-    total_schemes = await Scheme.count()
-    active_schemes = await Scheme.find(Scheme.is_active == True).count()
-    total_apps = await Application.count()
+    query_filter = {}
+    if admin.tier == "state":
+        query_filter["scope_state"] = admin.jurisdiction.state
+    elif admin.tier == "district":
+        query_filter["scope_state"] = admin.jurisdiction.state
+        query_filter["scope_district"] = admin.jurisdiction.district
+    elif admin.tier == "taluka":
+        query_filter["scope_state"] = admin.jurisdiction.state
+        query_filter["scope_district"] = admin.jurisdiction.district
+        query_filter["scope_taluka"] = admin.jurisdiction.taluka
+
+    total_schemes = await Scheme.find(query_filter).count()
+    active_schemes = await Scheme.find({"is_active": True, **query_filter}).count()
+
+    schemes = await Scheme.find(query_filter).project({"scheme_id": 1}).to_list()
+    scheme_ids = [s.scheme_id for s in schemes]
+
+    app_filter = {"scheme_id": {"$in": scheme_ids}} if scheme_ids else {"scheme_id": "NONE"}
+    if admin.tier == "national":
+        app_filter = {}
+
+    total_apps = await Application.find(app_filter).count()
 
     # Status breakdown
-    approved = await Application.find(Application.overall_status == "approved").count()
-    rejected = await Application.find(Application.overall_status == "rejected").count()
-    pending = await Application.find(Application.overall_status == "pending_offline_verification").count()
+    approved = await Application.find({"overall_status": "approved", **app_filter}).count()
+    rejected = await Application.find({"overall_status": "rejected", **app_filter}).count()
+    pending = await Application.find({"overall_status": "pending_offline_verification", **app_filter}).count()
 
     return {
         "total_schemes": total_schemes,
@@ -504,13 +523,31 @@ async def scheme_analytics(admin: Admin = Depends(require_admin)):
 
 @router.get("/analytics/citizens")
 async def citizen_analytics(admin: Admin = Depends(require_admin)):
-    total_citizens = await User.count()
+    query = {}
+    if admin.tier == "state":
+        query["profile.state"] = admin.jurisdiction.state
+    elif admin.tier == "district":
+        query["profile.state"] = admin.jurisdiction.state
+        query["profile.district"] = admin.jurisdiction.district
+    elif admin.tier == "taluka":
+        query["profile.state"] = admin.jurisdiction.state
+        query["profile.district"] = admin.jurisdiction.district
+        query["profile.taluka"] = admin.jurisdiction.taluka
 
-    # State-wise breakdown (simple aggregation)
-    pipeline = [
-        {"$group": {"_id": "$profile.state", "count": {"$sum": 1}}},
+    total_citizens = await User.find(query).count()
+
+    group_field = "$profile.state"
+    if admin.tier in ["state", "district", "taluka"]:
+        group_field = "$profile.district"
+
+    pipeline = []
+    if query:
+        pipeline.append({"$match": query})
+
+    pipeline.extend([
+        {"$group": {"_id": group_field, "count": {"$sum": 1}}},
         {"$sort": {"count": -1}}
-    ]
+    ])
     from app.core.database import get_db
     db = get_db()
     state_breakdown = await db["users"].aggregate(pipeline).to_list(100)
@@ -530,9 +567,21 @@ async def verification_analytics(admin: Admin = Depends(require_admin)):
         AuditLog.event_type.is_in(["offline_field_verified", "offline_field_rejected"])  # type: ignore
     ).count()
 
-    pending_apps = await Application.find(
-        Application.overall_status == "pending_offline_verification"
-    ).count()
+    query_filter = {}
+    if admin.tier == "state":
+        query_filter["scope_state"] = admin.jurisdiction.state
+    elif admin.tier == "district":
+        query_filter["scope_state"] = admin.jurisdiction.state
+        query_filter["scope_district"] = admin.jurisdiction.district
+
+    schemes = await Scheme.find(query_filter).project({"scheme_id": 1}).to_list()
+    scheme_ids = [s.scheme_id for s in schemes]
+
+    app_filter = {"scheme_id": {"$in": scheme_ids}, "overall_status": "pending_offline_verification"}
+    if admin.tier == "national":
+        app_filter = {"overall_status": "pending_offline_verification"}
+
+    pending_apps = await Application.find(app_filter).count()
 
     return {
         "total_verifications": total_verifications,
