@@ -79,11 +79,12 @@ export default function QRCardPage() {
             <div className="flex justify-center mb-6">
               <div className="bg-white p-3 rounded-xl">
                 <QRCodeSVG
-                  value={qrData?.signed_jwt || 'no-data'}
+                  value={qrData?.sahayak_id || 'no-data'}
                   size={180}
-                  level="M"
+                  level="L"
                   bgColor="#ffffff"
-                  fgColor="#1e3a5f"
+                  fgColor="#0f172a"
+                  marginSize={1}
                 />
               </div>
             </div>
@@ -150,8 +151,8 @@ export default function QRCardPage() {
         </div>
 
         <p className="text-xs text-gray-400 mt-4 text-center max-w-sm">
-          {t('This card is digitally signed using RS256. Verify its authenticity by scanning the QR code at any government office.',
-             'यह कार्ड RS256 से डिजिटल रूप से हस्ताक्षरित है। किसी भी सरकारी कार्यालय में QR स्कैन करके इसकी प्रामाणिकता जांचें।')}
+          {t('This QR directly encodes your Sahayak ID. Officials can scan it to fetch your details from the government database.',
+             'यह QR सीधे आपका सहायक आईडी दिखाता है। अधिकारी इसे स्कैन करके डेटाबेस से आपकी जानकारी प्राप्त कर सकते हैं।')}
         </p>
       </main>
     </div>
