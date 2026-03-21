@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 from typing import Optional
+from urllib.parse import parse_qs, urlparse
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.core.dependencies import require_officer
-from app.core.security import decode_token
 from app.models.officer import Officer
 from app.models.user import User
 from app.models.application import Application
@@ -21,23 +21,29 @@ class ScanRequest(BaseModel):
     purpose: str = "verification"
 
 
+def _extract_scanned_id(raw_value: str) -> str:
+    value = (raw_value or "").strip()
+    if not value:
+        return value
+    if value.startswith("http://") or value.startswith("https://"):
+        parsed = urlparse(value)
+        for key in ("sahayak_id", "id", "data", "q", "token", "qr_jwt", "jwt"):
+            extracted = parse_qs(parsed.query).get(key, [None])[0]
+            if extracted:
+                return extracted.strip()
+        path_parts = [p for p in parsed.path.split("/") if p]
+        if path_parts:
+            return path_parts[-1].strip()
+    return value
+
+
 @router.post("/scan")
 async def scan_qr(req: ScanRequest, officer: Officer = Depends(require_officer)):
     """Log a QR scan or manual search and return citizen profile."""
-    payload = {}
-    
     if req.qr_jwt:
-        # Verify the QR JWT
-        try:
-            payload = decode_token(req.qr_jwt)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="INVALID QR — Token tampered or expired. Do not proceed.")
-
-        if payload.get("type") != "qr":
-            raise HTTPException(status_code=400, detail="Invalid QR token type")
-        sahayak_id = payload.get("sub")
+        sahayak_id = _extract_scanned_id(req.qr_jwt)
     elif req.sahayak_id:
-        sahayak_id = req.sahayak_id
+        sahayak_id = req.sahayak_id.strip()
     else:
         raise HTTPException(status_code=400, detail="Provide qr_jwt or sahayak_id")
 
@@ -64,15 +70,16 @@ async def scan_qr(req: ScanRequest, officer: Officer = Depends(require_officer))
         metadata={"sahayak_id": sahayak_id, "purpose": req.purpose}
     ).insert()
 
-    # Fetch citizen profile
-    user = await User.find_one(User.sahayak_id == sahayak_id)
+    if not sahayak_id or not isinstance(sahayak_id, str):
+        raise HTTPException(status_code=400, detail="Invalid Sahayak ID")
+
+    # For family members, the sub might be SAH-YYYY-CC-xxxxx-uuid
+    search_id = sahayak_id[:17] if len(sahayak_id) > 17 and "-" in sahayak_id[17:] else sahayak_id
+
+    # Fetch citizen profile using parent/base sahayak_id
+    user = await User.find_one(User.sahayak_id == search_id)
     if not user:
-        return {
-            "valid": True,
-            "qr_payload": payload,
-            "citizen": None,
-            "message": "QR valid but citizen not found in database (offline data from QR payload shown)"
-        }
+        raise HTTPException(status_code=404, detail="Citizen not found for scanned ID")
 
     # Get pending applications
     apps = await Application.find(
@@ -96,7 +103,8 @@ async def scan_qr(req: ScanRequest, officer: Officer = Depends(require_officer))
             "income_annual": user.profile.income_annual,
             "is_bpl": user.profile.is_bpl,
             "caste_category": user.profile.caste_category,
-            "profile_photo_url": user.profile.profile_photo_url
+            "profile_photo_url": user.profile.profile_photo_url,
+            "enrolled_schemes": [s.model_dump() for s in user.enrolled_schemes]
         },
         "enrolled_schemes": [s.model_dump() for s in user.enrolled_schemes],
         "pending_applications": [{

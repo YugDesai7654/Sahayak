@@ -4,6 +4,24 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
 import { officerApi, applicationApi } from '@/lib/api';
 
+function normalizeQrInput(raw: string) {
+  const value = (raw || '').trim();
+  if (!value) return '';
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    try {
+      const url = new URL(value);
+      const queryKeys = ['sahayak_id', 'id', 'data', 'q', 'token', 'qr_jwt', 'jwt'];
+      for (const key of queryKeys) {
+        const value = url.searchParams.get(key);
+        if (value) return value.trim();
+      }
+      const pathPart = url.pathname.split('/').filter(Boolean).pop();
+      if (pathPart) return pathPart.trim();
+    } catch {}
+  }
+  return value;
+}
+
 export default function OfficerScanPage() {
   const { user } = useAuthStore();
   const [mode, setMode] = useState<'input' | 'camera' | 'result'>('input');
@@ -36,8 +54,10 @@ export default function OfficerScanPage() {
         { fps: 10, qrbox: { width: 250, height: 250 } },
         async (decodedText: string) => {
           // QR scanned successfully
-          await scanner.stop();
-          scannerRef.current = null;
+          if (scannerRef.current) {
+            try { await scannerRef.current.stop(); } catch (err) {}
+            scannerRef.current = null;
+          }
           setQrInput(decodedText);
           handleScan(decodedText);
         },
@@ -67,9 +87,9 @@ export default function OfficerScanPage() {
 
   const [sahayakIdInput, setSahayakIdInput] = useState('');
 
-  const handleScan = async (jwt?: string, sahayakId?: string) => {
+  const handleScan = async (qrValue?: string, sahayakId?: string) => {
     const payload: any = {};
-    if (jwt || qrInput) payload.qr_jwt = jwt || qrInput;
+    if (qrValue || qrInput) payload.qr_jwt = normalizeQrInput(qrValue || qrInput);
     else if (sahayakId || sahayakIdInput) payload.sahayak_id = sahayakId || sahayakIdInput;
     else { setError('Please enter a QR code or Sahayak ID'); return; }
     
@@ -142,7 +162,7 @@ export default function OfficerScanPage() {
                   onChange={e => setSahayakIdInput(e.target.value)}
                   className="input-field flex-1 font-mono uppercase tracking-widest placeholder-gray-400"
                   placeholder="e.g. SAH-123456"
-                  maxLength={16}
+                  maxLength={17}
                 />
                 <button onClick={() => handleScan()} disabled={loading} className="bg-blue-600 text-white px-6 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 transition whitespace-nowrap">
                   {loading ? 'Wait...' : 'Look Up 🔍'}
@@ -152,17 +172,17 @@ export default function OfficerScanPage() {
 
             <div className="text-center text-gray-400 text-sm font-semibold">— OR —</div>
 
-            {/* Manual token Input */}
+            {/* Manual QR data Input */}
             <div className="card p-6">
-              <h3 className="font-bold text-gray-900 mb-3 block">Paste QR Token Manually</h3>
+              <h3 className="font-bold text-gray-900 mb-3 block">Paste QR Data Manually</h3>
               <textarea
                 value={qrInput}
                 onChange={e => setQrInput(e.target.value)}
                 className="input-field h-20 font-mono text-xs"
-                placeholder="Paste raw QR JWT here..."
+                placeholder="Paste scanned QR value here..."
               />
               <button onClick={() => handleScan()} disabled={loading} className="w-full mt-3 bg-gray-800 text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-900 disabled:opacity-50 transition">
-                {loading ? 'Verifying...' : 'Verify Raw Token'}
+                {loading ? 'Verifying...' : 'Verify QR Data'}
               </button>
             </div>
           </div>
@@ -189,8 +209,8 @@ export default function OfficerScanPage() {
                 <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
                   <span className="text-3xl">✅</span>
                   <div>
-                    <p className="font-bold text-green-800">QR Code Verified — Authentic & Active</p>
-                    <p className="text-sm text-green-600">RS256 digital signature validated</p>
+                    <p className="font-bold text-green-800">QR Code Verified</p>
+                    <p className="text-sm text-green-600">Citizen ID found in database</p>
                   </div>
                 </div>
 
@@ -225,8 +245,8 @@ export default function OfficerScanPage() {
                       <div className="mt-6 pt-4 border-t">
                         <h4 className="font-bold text-gray-700 mb-2">Enrolled Schemes</h4>
                         <div className="flex flex-wrap gap-2">
-                          {scanResult.citizen.enrolled_schemes.map((s: any) => (
-                            <span key={s.scheme_id || s} className="badge-info">{s.scheme_name || s}</span>
+                          {scanResult.citizen.enrolled_schemes.map((s: any, idx: number) => (
+                            <span key={`${s.scheme_id || s}-${idx}`} className="badge-info">{s.scheme_name || s}</span>
                           ))}
                         </div>
                       </div>
@@ -327,7 +347,7 @@ export default function OfficerScanPage() {
                 <span className="text-6xl">🚫</span>
                 <p className="font-bold text-danger text-2xl mt-4">INVALID QR</p>
                 <p className="text-lg text-red-700 mt-2">Do NOT accept this identity.</p>
-                <p className="text-sm text-red-600 mt-2">The QR has been tampered with or has expired. The digital signature does not match the Sahayak public key.</p>
+                <p className="text-sm text-red-600 mt-2">Scanned ID was not found in the government database.</p>
               </div>
             )}
 
