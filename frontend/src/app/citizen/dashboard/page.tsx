@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
-import { citizenApi, schemeApi, applicationApi } from '@/lib/api';
+import { citizenApi, schemeApi, applicationApi, notificationApi, suggestionApi } from '@/lib/api';
 import { matchSchemes } from '@/lib/eligibility-engine';
 import { getCachedSchemes, cacheSchemes, cacheProfile } from '@/lib/db';
 
@@ -14,6 +14,8 @@ export default function CitizenDashboard() {
   const [matchResult, setMatchResult] = useState<any>(null);
   const [apps, setApps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user || user.role !== 'citizen') { router.push('/citizen/auth/login'); return; }
@@ -22,12 +24,20 @@ export default function CitizenDashboard() {
 
   async function loadData() {
     try {
-      const [profileRes, appsRes] = await Promise.all([
+      const [profileRes, appsRes, unreadRes] = await Promise.all([
         citizenApi.getProfile(),
-        applicationApi.list()
+        applicationApi.list(),
+        notificationApi.unreadCount().catch(() => ({ unread_count: 0 }))
       ]);
       setProfile(profileRes);
       setApps(appsRes.applications || []);
+      setUnreadCount(unreadRes.unread_count || 0);
+
+      // Load AI suggestions
+      try {
+        const sugRes = await suggestionApi.get();
+        setSuggestions(sugRes.suggestions || []);
+      } catch { /* ignore if suggestions fail */ }
       cacheProfile(profileRes);
 
       // Run offline matching
@@ -86,7 +96,7 @@ export default function CitizenDashboard() {
             </button>
             <Link href="/citizen/notifications" className="relative p-2 rounded-lg hover:bg-gray-100">
               🔔
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-danger rounded-full text-white text-[10px] flex items-center justify-center">3</span>
+              {unreadCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-danger rounded-full text-white text-[10px] flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
             </Link>
             <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-danger font-medium">Logout</button>
           </div>
@@ -139,6 +149,33 @@ export default function CitizenDashboard() {
             </Link>
           ))}
         </div>
+
+        {/* AI Smart Suggestions */}
+        {suggestions.length > 0 && (
+          <div className="card mb-8 border-2 border-indigo-100 bg-gradient-to-br from-indigo-50 to-purple-50">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">🤖 {t('AI Scheme Suggestions', 'AI योजना सुझाव')}</h2>
+              <Link href="/citizen/notifications" className="text-sm text-primary font-medium hover:underline">{t('View All', 'सभी देखें')} →</Link>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {suggestions.slice(0, 6).map((s: any) => (
+                <Link key={s.scheme_id} href={`/citizen/schemes/${s.scheme_id}`} className="bg-white rounded-xl p-4 border hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-semibold text-gray-800 text-sm leading-tight">{s.name?.en || 'Scheme'}</h4>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s.is_eligible ? 'bg-green-100 text-green-700' : s.is_near_miss ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {Math.round(s.combined_score * 100)}%
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 line-clamp-2 mb-2">{s.description?.en || ''}</p>
+                  {s.benefit_amount > 0 && (
+                    <p className="text-sm font-bold text-success">₹{s.benefit_amount.toLocaleString('en-IN')}/{s.benefit_frequency}</p>
+                  )}
+                  {s.match_reasons?.[0] && <p className="text-xs text-indigo-600 mt-1">💡 {s.match_reasons[0]}</p>}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Recent Applications */}
         {apps.length > 0 && (

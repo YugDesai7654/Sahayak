@@ -138,5 +138,23 @@ export const adminApi = {
   verificationAnalytics: () => request<any>('/admin/analytics/verifications'),
 };
 
+// ── Notifications ─────────────────────────────────────────
+export const notificationApi = {
+  list: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<any>(`/notifications${qs}`);
+  },
+  unreadCount: () => request<{ unread_count: number }>('/notifications/unread-count'),
+  markRead: (id: string) => request(`/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllRead: () => request('/notifications/mark-all-read', { method: 'POST' }),
+  dismiss: (id: string) => request(`/notifications/${id}`, { method: 'DELETE' }),
+};
+
+// ── Suggestions ───────────────────────────────────────────
+export const suggestionApi = {
+  get: () => request<any>('/suggestions'),
+  refresh: () => request<any>('/suggestions/refresh', { method: 'POST' }),
+};
+
 // ── Public Key ─────────────────────────────────────────────
 export const getPublicKey = () => request<{ public_key: string }>('/public-key');

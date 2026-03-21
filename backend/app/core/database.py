@@ -17,11 +17,12 @@ async def init_db():
     from app.models.application import Application
     from app.models.qr_token import QRToken
     from app.models.audit_log import AuditLog
+    from app.models.notification import Notification
 
     await init_beanie(
         database=db,
         document_models=[
-            User, Officer, Admin, Scheme, Application, QRToken, AuditLog
+            User, Officer, Admin, Scheme, Application, QRToken, AuditLog, Notification
         ]
     )
 

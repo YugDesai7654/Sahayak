@@ -20,6 +20,7 @@ from app.models.scheme import (
 from app.models.application import Application
 from app.models.qr_token import QRToken
 from app.models.audit_log import AuditLog
+from app.models.notification import Notification
 
 
 async def seed():
@@ -27,11 +28,11 @@ async def seed():
     client = AsyncIOMotorClient(settings.MONGODB_URL)
     db = client[settings.MONGODB_DB_NAME]
     await init_beanie(database=db, document_models=[
-        User, Officer, Admin, Scheme, Application, QRToken, AuditLog
+        User, Officer, Admin, Scheme, Application, QRToken, AuditLog, Notification
     ])
 
     # Clear existing data
-    for model in [User, Officer, Admin, Scheme, Application, QRToken, AuditLog]:
+    for model in [User, Officer, Admin, Scheme, Application, QRToken, AuditLog, Notification]:
         await model.find_all().delete()
 
     print("🌱 Seeding Sahayak database...")
@@ -551,6 +552,188 @@ async def seed():
             ],
             "docs": ["Jamabandi", "Aadhaar Card", "Bank Passbook"]
         },
+        # 16. PM Ujjwala (National)
+        {"scheme_id": "UJJWALA-016", "name": {"en": "PM Ujjwala Yojana", "hi": "पीएम उज्ज्वला योजना", "gu": "પીએમ ઉજ્જવલા યોજના"},
+         "desc": {"en": "Free LPG connections to women from BPL households", "hi": "बीपीएल परिवारों की महिलाओं को मुफ्त LPG कनेक्शन"},
+         "ministry": "Ministry of Petroleum", "department": "Petroleum", "category": ["welfare", "women"],
+         "benefit_type": "subsidy", "benefit_amount": 1600, "benefit_frequency": "one-time", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "gender", "operator": "eq", "value": "female", "label": "Female applicant"},
+                   {"rule_id": "r2", "field": "is_bpl", "operator": "eq", "value": True, "label": "BPL household"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"},
+                         {"field_id": "f2", "label_en": "Aadhaar Last 4", "maps_to_profile": "aadhaar_last4"}],
+         "docs": ["Aadhaar Card", "BPL Card"]},
+        # 17. PM SVANidhi (National)
+        {"scheme_id": "SVANIDHI-017", "name": {"en": "PM SVANidhi - Street Vendor Loan", "hi": "पीएम स्वनिधि", "gu": "પીએમ સ્વનિધિ"},
+         "desc": {"en": "Micro-credit loans up to ₹50,000 for street vendors", "hi": "स्ट्रीट वेंडरों के लिए ₹50,000 तक का सूक्ष्म ऋण"},
+         "ministry": "Ministry of Housing", "department": "Urban Affairs", "category": ["employment"],
+         "benefit_type": "subsidy", "benefit_amount": 50000, "benefit_frequency": "one-time", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "income_annual", "operator": "lte", "value": 200000, "label": "Income ≤ ₹2L"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "Vendor Certificate"]},
+        # 18. Sukanya Samriddhi (National)
+        {"scheme_id": "SUKANYA-018", "name": {"en": "Sukanya Samriddhi Yojana", "hi": "सुकन्या समृद्धि योजना", "gu": "સુકન્યા સમૃદ્ધિ"},
+         "desc": {"en": "Savings scheme for girl child with high interest rate and tax benefits", "hi": "बालिकाओं के लिए उच्च ब्याज दर बचत योजना"},
+         "ministry": "Ministry of Finance", "department": "Finance", "category": ["women", "savings"],
+         "benefit_type": "other", "benefit_amount": 0, "benefit_frequency": "annual", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "gender", "operator": "eq", "value": "female", "label": "Girl child"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Girl's Name", "maps_to_profile": "name"}],
+         "docs": ["Birth Certificate", "Aadhaar Card"]},
+        # 19. PM Fasal Bima (National)
+        {"scheme_id": "FASAL-019", "name": {"en": "PM Fasal Bima Yojana", "hi": "पीएम फसल बीमा योजना", "gu": "પીએમ ફસલ વીમા"},
+         "desc": {"en": "Crop insurance scheme protecting farmers against crop loss", "hi": "फसल हानि से किसानों की रक्षा करने वाली फसल बीमा योजना"},
+         "ministry": "Ministry of Agriculture", "department": "Agriculture", "category": ["agriculture", "insurance"],
+         "benefit_type": "insurance", "benefit_amount": 200000, "benefit_frequency": "annual", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "occupation", "operator": "eq", "value": "Farmer", "label": "Must be farmer"},
+                   {"rule_id": "r2", "field": "land_holding_acres", "operator": "gt", "value": 0, "label": "Must own land"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "Land Record"]},
+        # 20. Mudra Yojana (National)
+        {"scheme_id": "MUDRA-020", "name": {"en": "PM Mudra Yojana", "hi": "पीएम मुद्रा योजना", "gu": "પીએમ મુદ્રા યોજના"},
+         "desc": {"en": "Collateral-free loans up to ₹10 lakh for micro enterprises", "hi": "सूक्ष्म उद्यमों के लिए ₹10 लाख तक बिना गारंटी ऋण"},
+         "ministry": "Ministry of Finance", "department": "Finance", "category": ["employment"],
+         "benefit_type": "subsidy", "benefit_amount": 1000000, "benefit_frequency": "one-time", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "income_annual", "operator": "lte", "value": 500000, "label": "Income ≤ ₹5L"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "Business Plan"]},
+        # 21. Jan Dhan (National)
+        {"scheme_id": "JANDHAN-021", "name": {"en": "PM Jan Dhan Yojana", "hi": "पीएम जन धन योजना", "gu": "પીએમ જન ધન"},
+         "desc": {"en": "Zero-balance bank accounts with accident insurance and overdraft facility", "hi": "शून्य शेष बैंक खाते दुर्घटना बीमा के साथ"},
+         "ministry": "Ministry of Finance", "department": "Finance", "category": ["banking"],
+         "benefit_type": "insurance", "benefit_amount": 200000, "benefit_frequency": "one-time", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "is_bpl", "operator": "eq", "value": True, "label": "BPL family"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card"]},
+        # 22. Gujarat Manav Garima (State)
+        {"scheme_id": "GJ-GARIMA-022", "name": {"en": "Gujarat Manav Garima Yojana", "hi": "गुजरात मानव गरिमा", "gu": "ગુજરાત માનવ ગરિમા"},
+         "desc": {"en": "Equipment and tools for SC families to start self-employment", "hi": "अनुसूचित जाति परिवारों को स्वरोजगार के लिए उपकरण"},
+         "ministry": "Gujarat Social Justice", "department": "Social Justice", "category": ["employment"],
+         "benefit_type": "other", "benefit_amount": 4000, "benefit_frequency": "one-time",
+         "scope": "state", "scope_state": "Gujarat",
+         "rules": [{"rule_id": "r1", "field": "state", "operator": "eq", "value": "Gujarat", "label": "Gujarat resident"},
+                   {"rule_id": "r2", "field": "caste_category", "operator": "in", "value": ["SC"], "label": "SC category"},
+                   {"rule_id": "r3", "field": "is_bpl", "operator": "eq", "value": True, "label": "BPL"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Caste Certificate", "BPL Card"]},
+        # 23. Gujarat MukhyaMantri Amrutum (State)
+        {"scheme_id": "GJ-MAA-023", "name": {"en": "MukhyaMantri Amrutum (MA) Yojana", "hi": "मुख्यमंत्री अमृतम", "gu": "મુખ્યમંત્રી અમૃતમ"},
+         "desc": {"en": "Health insurance of ₹5 lakh for BPL families in Gujarat", "hi": "गुजरात में बीपीएल परिवारों के लिए ₹5 लाख स्वास्थ्य बीमा"},
+         "ministry": "Gujarat Health Dept", "department": "Health", "category": ["health"],
+         "benefit_type": "insurance", "benefit_amount": 500000, "benefit_frequency": "annual",
+         "scope": "state", "scope_state": "Gujarat",
+         "rules": [{"rule_id": "r1", "field": "state", "operator": "eq", "value": "Gujarat", "label": "Gujarat resident"},
+                   {"rule_id": "r2", "field": "is_bpl", "operator": "eq", "value": True, "label": "BPL"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "BPL Card"]},
+        # 24. Maharashtra Ladki Bahin (State)
+        {"scheme_id": "MH-LADKI-024", "name": {"en": "Maharashtra Ladki Bahin Yojana", "hi": "महाराष्ट्र लाडकी बहीण", "gu": "મહારાષ્ટ્ર લાડકી બહીણ"},
+         "desc": {"en": "Monthly ₹1,500 financial assistance to women aged 21-65 in Maharashtra", "hi": "महाराष्ट्र में 21-65 वर्ष की महिलाओं को ₹1,500 मासिक सहायता"},
+         "ministry": "Maharashtra Women Dept", "department": "Women & Child Dev", "category": ["women"],
+         "benefit_type": "cash", "benefit_amount": 1500, "benefit_frequency": "monthly",
+         "scope": "state", "scope_state": "Maharashtra",
+         "rules": [{"rule_id": "r1", "field": "state", "operator": "eq", "value": "Maharashtra", "label": "Maharashtra resident"},
+                   {"rule_id": "r2", "field": "gender", "operator": "eq", "value": "female", "label": "Female"},
+                   {"rule_id": "r3", "field": "income_annual", "operator": "lte", "value": 250000, "label": "Income ≤ ₹2.5L"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "Domicile Certificate"]},
+        # 25. UP Kanya Sumangala (State)
+        {"scheme_id": "UP-KANYA-025", "name": {"en": "UP Kanya Sumangala Yojana", "hi": "उत्तर प्रदेश कन्या सुमंगला", "gu": "UP કન્યા સુમંગલા"},
+         "desc": {"en": "₹15,000 in installments for girl child education in UP", "hi": "यूपी में बालिकाओं की शिक्षा के लिए ₹15,000 किश्तों में"},
+         "ministry": "UP Women Dept", "department": "Women & Child Dev", "category": ["education", "women"],
+         "benefit_type": "cash", "benefit_amount": 15000, "benefit_frequency": "one-time",
+         "scope": "state", "scope_state": "Uttar Pradesh",
+         "rules": [{"rule_id": "r1", "field": "state", "operator": "eq", "value": "Uttar Pradesh", "label": "UP resident"},
+                   {"rule_id": "r2", "field": "gender", "operator": "eq", "value": "female", "label": "Female"},
+                   {"rule_id": "r3", "field": "income_annual", "operator": "lte", "value": 300000, "label": "Income ≤ ₹3L"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Birth Certificate", "Aadhaar Card"]},
+        # 26. Rajasthan Chiranjeevi (State)
+        {"scheme_id": "RJ-CHIRAN-026", "name": {"en": "Rajasthan Chiranjeevi Yojana", "hi": "राजस्थान चिरंजीवी योजना", "gu": "રાજસ્થાન ચિરંજીવી"},
+         "desc": {"en": "Free health insurance up to ₹25 lakh for Rajasthan families", "hi": "राजस्थान परिवारों के लिए ₹25 लाख तक मुफ्त स्वास्थ्य बीमा"},
+         "ministry": "Rajasthan Health Dept", "department": "Health", "category": ["health"],
+         "benefit_type": "insurance", "benefit_amount": 2500000, "benefit_frequency": "annual",
+         "scope": "state", "scope_state": "Rajasthan",
+         "rules": [{"rule_id": "r1", "field": "state", "operator": "eq", "value": "Rajasthan", "label": "Rajasthan resident"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "Jan Aadhaar"]},
+        # 27. MP Ladli Laxmi (State)
+        {"scheme_id": "MP-LADLI-027", "name": {"en": "MP Ladli Laxmi Yojana", "hi": "मध्य प्रदेश लाड़ली लक्ष्मी", "gu": "MP લાડલી લક્ષ્મી"},
+         "desc": {"en": "₹1.43 lakh for girl child education and marriage in MP", "hi": "मध्य प्रदेश में बालिका शिक्षा और विवाह के लिए ₹1.43 लाख"},
+         "ministry": "MP Women Dept", "department": "Women & Child Dev", "category": ["women", "education"],
+         "benefit_type": "cash", "benefit_amount": 143000, "benefit_frequency": "one-time",
+         "scope": "state", "scope_state": "Madhya Pradesh",
+         "rules": [{"rule_id": "r1", "field": "state", "operator": "eq", "value": "Madhya Pradesh", "label": "MP resident"},
+                   {"rule_id": "r2", "field": "gender", "operator": "eq", "value": "female", "label": "Female"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Birth Certificate", "Aadhaar Card"]},
+        # 28. Stand-Up India (National)
+        {"scheme_id": "STANDUP-028", "name": {"en": "Stand-Up India Scheme", "hi": "स्टैंड-अप इंडिया", "gu": "સ્ટેન્ડ-અપ ઇન્ડિયા"},
+         "desc": {"en": "Bank loans ₹10L-₹1Cr for SC/ST/Women entrepreneurs", "hi": "SC/ST/महिला उद्यमियों के लिए ₹10L-₹1Cr बैंक ऋण"},
+         "ministry": "Ministry of Finance", "department": "Finance", "category": ["employment"],
+         "benefit_type": "subsidy", "benefit_amount": 1000000, "benefit_frequency": "one-time", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "caste_category", "operator": "in", "value": ["SC", "ST"], "label": "SC/ST category"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "Caste Certificate", "Business Plan"]},
+        # 29. PM Garib Kalyan Anna (National)
+        {"scheme_id": "GKAY-029", "name": {"en": "PM Garib Kalyan Anna Yojana", "hi": "पीएम गरीब कल्याण अन्न योजना", "gu": "પીએમ ગરીબ કલ્યાણ અન્ન"},
+         "desc": {"en": "Free food grains (5kg/person/month) for BPL families", "hi": "बीपीएल परिवारों के लिए मुफ्त अनाज (5 किलो/व्यक्ति/माह)"},
+         "ministry": "Ministry of Consumer Affairs", "department": "Food", "category": ["welfare"],
+         "benefit_type": "other", "benefit_amount": 0, "benefit_frequency": "monthly", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "is_bpl", "operator": "eq", "value": True, "label": "BPL cardholder"},
+                   {"rule_id": "r2", "field": "ration_card_type", "operator": "in", "value": ["BPL", "AAY"], "label": "BPL/AAY ration card"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Ration Card", "Aadhaar Card"]},
+        # 30. PM Matru Vandana (National)
+        {"scheme_id": "MATRU-030", "name": {"en": "PM Matru Vandana Yojana", "hi": "पीएम मातृ वंदना योजना", "gu": "પીએમ માતૃ વંદના"},
+         "desc": {"en": "₹5,000 for pregnant and lactating mothers for first live birth", "hi": "पहले जीवित जन्म के लिए गर्भवती माताओं को ₹5,000"},
+         "ministry": "Ministry of Women & Child Dev", "department": "Women & Child Development", "category": ["women", "health"],
+         "benefit_type": "cash", "benefit_amount": 5000, "benefit_frequency": "one-time", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "gender", "operator": "eq", "value": "female", "label": "Female"},
+                   {"rule_id": "r2", "field": "income_annual", "operator": "lte", "value": 200000, "label": "Income ≤ ₹2L"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "MCP Card"]},
+        # 31. Atal Pension (National)
+        {"scheme_id": "APY-031", "name": {"en": "Atal Pension Yojana", "hi": "अटल पेंशन योजना", "gu": "અટલ પેન્શન યોજના"},
+         "desc": {"en": "Guaranteed pension of ₹1,000-₹5,000/month after age 60 for unorganized sector workers", "hi": "असंगठित क्षेत्र के श्रमिकों को 60 वर्ष बाद ₹1,000-₹5,000/माह"},
+         "ministry": "Ministry of Finance", "department": "Finance", "category": ["pension"],
+         "benefit_type": "pension", "benefit_amount": 5000, "benefit_frequency": "monthly", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "income_annual", "operator": "lte", "value": 300000, "label": "Income ≤ ₹3L"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "Bank Passbook"]},
+        # 32. Soil Health Card (National)
+        {"scheme_id": "SHC-032", "name": {"en": "Soil Health Card Scheme", "hi": "मृदा स्वास्थ्य कार्ड", "gu": "માટી આરોગ્ય કાર્ડ"},
+         "desc": {"en": "Free soil testing and recommendations for all farmers", "hi": "सभी किसानों के लिए मुफ्त मिट्टी परीक्षण और सिफारिशें"},
+         "ministry": "Ministry of Agriculture", "department": "Agriculture", "category": ["agriculture"],
+         "benefit_type": "other", "benefit_amount": 0, "benefit_frequency": "annual", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "occupation", "operator": "eq", "value": "Farmer", "label": "Must be farmer"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "Land Record"]},
+        # 33. Digital India Scholarship (National)
+        {"scheme_id": "DIGITAL-033", "name": {"en": "Digital India Internship & Scholarship", "hi": "डिजिटल इंडिया छात्रवृत्ति", "gu": "ડિજિટલ ઇન્ડિયા સ્કૉલરશિપ"},
+         "desc": {"en": "Scholarship for students in IT and digital skills courses", "hi": "IT और डिजिटल कौशल पाठ्यक्रमों में छात्रों के लिए छात्रवृत्ति"},
+         "ministry": "Ministry of Electronics & IT", "department": "IT", "category": ["education"],
+         "benefit_type": "scholarship", "benefit_amount": 10000, "benefit_frequency": "annual", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "income_annual", "operator": "lte", "value": 300000, "label": "Income ≤ ₹3L"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "Marksheet"]},
+        # 34. Gujarat Kanya Kelavani (State)
+        {"scheme_id": "GJ-KELAVANI-034", "name": {"en": "Gujarat Kanya Kelavani Yojana", "hi": "गुजरात कन्या केलवणी", "gu": "ગુજરાત કન્યા કેળવણી"},
+         "desc": {"en": "Free education support for girls from SC/ST families in Gujarat", "hi": "गुजरात में SC/ST परिवारों की बालिकाओं को मुफ्त शिक्षा सहायता"},
+         "ministry": "Gujarat Education Dept", "department": "Education", "category": ["education", "women"],
+         "benefit_type": "scholarship", "benefit_amount": 20000, "benefit_frequency": "annual",
+         "scope": "state", "scope_state": "Gujarat",
+         "rules": [{"rule_id": "r1", "field": "state", "operator": "eq", "value": "Gujarat", "label": "Gujarat resident"},
+                   {"rule_id": "r2", "field": "gender", "operator": "eq", "value": "female", "label": "Female"},
+                   {"rule_id": "r3", "field": "caste_category", "operator": "in", "value": ["SC", "ST"], "label": "SC/ST"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Caste Certificate", "School Certificate"]},
+        # 35. PM Vishwakarma (National)
+        {"scheme_id": "VISHWA-035", "name": {"en": "PM Vishwakarma Yojana", "hi": "पीएम विश्वकर्मा योजना", "gu": "પીએમ વિશ્વકર્મા"},
+         "desc": {"en": "Skill training and loans for traditional artisans and craftsmen", "hi": "पारंपरिक कारीगरों को कौशल प्रशिक्षण और ऋण"},
+         "ministry": "Ministry of MSME", "department": "MSME", "category": ["employment"],
+         "benefit_type": "subsidy", "benefit_amount": 300000, "benefit_frequency": "one-time", "scope": "national",
+         "rules": [{"rule_id": "r1", "field": "income_annual", "operator": "lte", "value": 300000, "label": "Income ≤ ₹3L"}],
+         "form_fields": [{"field_id": "f1", "label_en": "Full Name", "maps_to_profile": "name"}],
+         "docs": ["Aadhaar Card", "Skill Certificate"]},
     ]
 
     for sd in schemes_data:

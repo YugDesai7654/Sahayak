@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import io
@@ -65,7 +65,11 @@ async def get_my_profile(user: User = Depends(require_citizen)):
 
 
 @router.put("/me")
-async def update_profile(req: ProfileUpdateRequest, user: User = Depends(require_citizen)):
+async def update_profile(
+    req: ProfileUpdateRequest,
+    background_tasks: BackgroundTasks,
+    user: User = Depends(require_citizen)
+):
     update_data = req.model_dump(exclude_none=True)
     if "dob" in update_data and update_data["dob"]:
         try:
@@ -89,6 +93,17 @@ async def update_profile(req: ProfileUpdateRequest, user: User = Depends(require
         actor_role="citizen",
         metadata={"updated_fields": list(update_data.keys())}
     ).insert()
+
+    # Auto-refresh NLP scheme suggestions after profile update
+    async def _refresh_suggestions():
+        try:
+            from app.services.nlp_suggestion_service import generate_suggestion_notifications
+            await generate_suggestion_notifications(user)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Suggestion refresh failed: {e}")
+
+    background_tasks.add_task(_refresh_suggestions)
 
     return {"message": "Profile updated", "profile": user.profile.model_dump()}
 

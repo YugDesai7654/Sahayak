@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     CLOUDINARY_URL: Optional[str] = None
     TESSERACT_CMD: Optional[str] = None
 
+    # NLP Suggestions
+    NLP_SUGGESTION_TOP_N: int = 10
+    NLP_SIMILARITY_THRESHOLD: float = 0.05
+
     # App
     APP_NAME: str = "Sahayak"
     APP_ENV: str = "development"

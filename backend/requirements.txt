@@ -28,6 +28,8 @@ Pillow==11.1.0
 
 # NLP
 spacy==3.8.0
+scikit-learn==1.4.0
+numpy>=1.26.0
 
 # Background tasks
 celery==5.3.6
