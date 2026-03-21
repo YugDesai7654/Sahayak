@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { citizenApi, schemeApi, applicationApi, notificationApi, suggestionApi } from '@/lib/api';
 import { matchSchemes } from '@/lib/eligibility-engine';
-import { getCachedSchemes, cacheSchemes, cacheProfile } from '@/lib/db';
 
 export default function CitizenDashboard() {
   const { user, logout, lang, setLang, isOffline } = useAuthStore();
@@ -38,17 +37,9 @@ export default function CitizenDashboard() {
         const sugRes = await suggestionApi.get();
         setSuggestions(sugRes.suggestions || []);
       } catch { /* ignore if suggestions fail */ }
-      cacheProfile(profileRes);
 
-      // Run offline matching
-      let schemes = await getCachedSchemes();
-      if (schemes.length === 0) {
-        try {
-          const bundle = await schemeApi.bundle();
-          schemes = bundle.schemes || [];
-          await cacheSchemes(schemes);
-        } catch { /* offline */ }
-      }
+      const bundle = await schemeApi.bundle();
+      const schemes = bundle.schemes || [];
       if (schemes.length > 0 && profileRes.profile) {
         const result = matchSchemes(profileRes.profile, schemes);
         setMatchResult(result);

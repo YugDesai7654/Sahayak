@@ -5,6 +5,35 @@ import { useAuthStore } from '@/store/auth';
 import { adminApi } from '@/lib/api';
 
 export default function AdminSchemesPage() {
+  type FormState = {
+    scheme_id: string;
+    name: { en: string; hi: string; gu: string };
+    description: { en: string; hi: string };
+    ministry: string;
+    department: string;
+    category: string;
+    benefit_type: string;
+    benefit_amount: string;
+    benefit_frequency: string;
+    deadline: string;
+    required_documents: string[];
+    eligibility_rules: any[];
+    application_form: { sections: any[] };
+  };
+
+  const normalizeAmountInput = (raw: string) => {
+    const cleaned = raw.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length <= 1) return cleaned;
+    return `${parts[0]}.${parts.slice(1).join('')}`;
+  };
+
+  const toAmountNumber = (raw: string) => {
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed < 0) return 0;
+    return parsed;
+  };
+
   const { user } = useAuthStore();
   const [schemes, setSchemes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

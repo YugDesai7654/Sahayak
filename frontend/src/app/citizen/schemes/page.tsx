@@ -2,9 +2,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
-import { schemeApi } from '@/lib/api';
+import { citizenApi, schemeApi } from '@/lib/api';
 import { matchSchemes } from '@/lib/eligibility-engine';
-import { getCachedSchemes, getCachedProfile, cacheSchemes } from '@/lib/db';
 import type { SchemeMatchResult } from '@/types';
 
 export default function SchemesPage() {
@@ -21,13 +20,12 @@ export default function SchemesPage() {
 
   async function loadSchemes() {
     try {
-      let schemes = await getCachedSchemes();
-      if (schemes.length === 0) {
-        const bundle = await schemeApi.bundle();
-        schemes = bundle.schemes || [];
-        await cacheSchemes(schemes);
-      }
-      const profile = await getCachedProfile();
+      const [bundle, profile] = await Promise.all([
+        schemeApi.bundle(),
+        citizenApi.getProfile(),
+      ]);
+      const schemes = bundle.schemes || [];
+
       if (profile?.profile) {
         const result = matchSchemes(profile.profile, schemes);
         setEligible(result.eligible);

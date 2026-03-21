@@ -2,8 +2,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
+import { citizenApi, schemeApi } from '@/lib/api';
 import { matchSchemes } from '@/lib/eligibility-engine';
-import { getCachedSchemes, getCachedProfile } from '@/lib/db';
 
 export default function BenefitCalculator() {
   const { lang } = useAuthStore();
@@ -12,8 +12,11 @@ export default function BenefitCalculator() {
 
   useEffect(() => {
     (async () => {
-      const schemes = await getCachedSchemes();
-      const profile = await getCachedProfile();
+      const [bundle, profile] = await Promise.all([
+        schemeApi.bundle(),
+        citizenApi.getProfile(),
+      ]);
+      const schemes = bundle.schemes || [];
       if (profile?.profile && schemes.length > 0) {
         const r = matchSchemes(profile.profile, schemes);
         setResult(r);

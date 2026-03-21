@@ -8,9 +8,6 @@ class Settings(BaseSettings):
     MONGODB_URL: str = "mongodb://localhost:27017"
     MONGODB_DB_NAME: str = "sahayak"
 
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379"
-
     # JWT RS256 Keys
     JWT_PRIVATE_KEY_PATH: str = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "keys", "private.pem")
     JWT_PUBLIC_KEY_PATH: str = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "keys", "public.pem")
