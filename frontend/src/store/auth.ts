@@ -13,6 +13,7 @@ interface AuthUser {
   office_name?: string;
   district?: string;
   department?: string;
+  designation?: string;
 }
 
 interface AuthState {

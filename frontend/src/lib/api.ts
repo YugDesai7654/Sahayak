@@ -59,6 +59,11 @@ export const citizenApi = {
     request(`/citizens/me/family/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   removeFamily: (id: string) =>
     request(`/citizens/me/family/${id}`, { method: 'DELETE' }),
+  downloadQRCard: async () => {
+    const res = await fetch(`${API_BASE}/citizens/me/qr/card-pdf`, { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to download QR card');
+    return res.blob();
+  },
 };
 
 // ── Schemes ────────────────────────────────────────────────
@@ -82,6 +87,11 @@ export const applicationApi = {
     request(`/applications/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   verifyField: (appId: string, data: { field_id: string; status: string; note?: string }) =>
     request(`/applications/${appId}/verify-field`, { method: 'PATCH', body: JSON.stringify(data) }),
+  downloadSummary: async (id: string) => {
+    const res = await fetch(`${API_BASE}/applications/${id}/pdf`, { credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to download summary');
+    return res.blob();
+  },
 };
 
 // ── Officer ────────────────────────────────────────────────

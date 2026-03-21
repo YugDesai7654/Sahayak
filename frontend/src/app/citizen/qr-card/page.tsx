@@ -11,6 +11,7 @@ export default function QRCardPage() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('me');
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     loadQR();
@@ -125,9 +126,21 @@ export default function QRCardPage() {
 
         {/* Actions */}
         <div className="flex gap-3 mt-8">
-          <a href={`/api/citizens/me/qr/card-pdf`} className="btn-primary text-sm px-6 py-3">
-            📄 {t('Download PDF', 'PDF डाउनलोड करें')}
-          </a>
+          <button onClick={async () => {
+            setDownloading(true);
+            try {
+              const blob = await citizenApi.downloadQRCard();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `sahayak-card-${sahayakId}.pdf`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+            } catch (err) { alert('Download failed'); }
+            setDownloading(false);
+          }} disabled={downloading} className="btn-primary text-sm px-6 py-3 disabled:opacity-50">
+            📄 {downloading ? t('Downloading...', 'डाउनलोड हो रहा है...') : t('Download PDF', 'PDF डाउनलोड करें')}
+          </button>
           <button onClick={async () => { await citizenApi.refreshQR(); loadQR(); }} className="btn-secondary text-sm px-6 py-3">
             🔄 {t('Refresh QR', 'QR ताज़ा करें')}
           </button>

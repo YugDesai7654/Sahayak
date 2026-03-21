@@ -64,7 +64,7 @@ export default function OfficerDashboard() {
             <h3 className="text-xl font-bold">Scan QR Code</h3>
             <p className="text-sm mt-1 opacity-80">Scan citizen&apos;s Sahayak QR to verify identity & process verifications</p>
           </Link>
-          <Link href="/officer/pending" className="card bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:scale-[1.02] transition-transform">
+          <Link href="/officer/verifications" className="card bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:scale-[1.02] transition-transform">
             <div className="text-4xl mb-3">📋</div>
             <h3 className="text-xl font-bold">Pending Verifications</h3>
             <p className="text-sm mt-1 opacity-80">View and process offline field verifications for applications</p>
