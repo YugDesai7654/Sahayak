@@ -65,17 +65,22 @@ export default function OfficerScanPage() {
     };
   }, []);
 
-  const handleScan = async (jwt?: string) => {
-    const token = jwt || qrInput;
-    if (!token.trim()) { setError('Please enter or scan a QR code'); return; }
+  const [sahayakIdInput, setSahayakIdInput] = useState('');
+
+  const handleScan = async (jwt?: string, sahayakId?: string) => {
+    const payload: any = {};
+    if (jwt || qrInput) payload.qr_jwt = jwt || qrInput;
+    else if (sahayakId || sahayakIdInput) payload.sahayak_id = sahayakId || sahayakIdInput;
+    else { setError('Please enter a QR code or Sahayak ID'); return; }
+    
     setLoading(true);
     setError('');
     try {
-      const res = await officerApi.scan(token);
+      const res = await officerApi.scan(payload);
       setScanResult(res);
       setMode('result');
     } catch (err: any) {
-      setError(err.message || 'Scan failed — QR may be invalid or expired');
+      setError(err.message || 'Verification failed — check input or QR code');
       setMode('input');
     }
     setLoading(false);
@@ -126,17 +131,38 @@ export default function OfficerScanPage() {
 
             <div className="text-center text-gray-400 text-sm font-semibold">— OR —</div>
 
-            {/* Manual Input */}
+            {/* Sahayak ID Input */}
+            <div className="card p-6 border-l-4 border-l-blue-500">
+              <h3 className="font-bold text-gray-900 mb-3 block">Enter Sahayak ID Manually</h3>
+              <p className="text-xs text-gray-500 mb-3">If the citizen&apos;s camera or QR is broken, you can verify using their ID directly.</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={sahayakIdInput}
+                  onChange={e => setSahayakIdInput(e.target.value)}
+                  className="input-field flex-1 font-mono uppercase tracking-widest placeholder-gray-400"
+                  placeholder="e.g. SAH-123456"
+                  maxLength={16}
+                />
+                <button onClick={() => handleScan()} disabled={loading} className="bg-blue-600 text-white px-6 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 transition whitespace-nowrap">
+                  {loading ? 'Wait...' : 'Look Up 🔍'}
+                </button>
+              </div>
+            </div>
+
+            <div className="text-center text-gray-400 text-sm font-semibold">— OR —</div>
+
+            {/* Manual token Input */}
             <div className="card p-6">
-              <h3 className="font-bold text-gray-900 mb-3">Paste QR Token Manually</h3>
+              <h3 className="font-bold text-gray-900 mb-3 block">Paste QR Token Manually</h3>
               <textarea
                 value={qrInput}
                 onChange={e => setQrInput(e.target.value)}
-                className="input-field h-28 font-mono text-xs"
-                placeholder="Paste QR JWT here..."
+                className="input-field h-20 font-mono text-xs"
+                placeholder="Paste raw QR JWT here..."
               />
-              <button onClick={() => handleScan()} disabled={loading} className="w-full mt-3 bg-tricolor-green text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 disabled:opacity-50 transition">
-                {loading ? 'Verifying...' : '🔍 Verify QR Code'}
+              <button onClick={() => handleScan()} disabled={loading} className="w-full mt-3 bg-gray-800 text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-900 disabled:opacity-50 transition">
+                {loading ? 'Verifying...' : 'Verify Raw Token'}
               </button>
             </div>
           </div>

@@ -80,11 +80,7 @@ async def update_profile(req: ProfileUpdateRequest, user: User = Depends(require
     user.updated_at = datetime.now(timezone.utc)
     await user.save()
 
-    # Regenerate QR after profile update
-    try:
-        await generate_qr_for_user(user)
-    except Exception:
-        pass
+    # Removed QR regeneration to keep initial QR permanent
 
     await AuditLog(
         event_type="profile_update",

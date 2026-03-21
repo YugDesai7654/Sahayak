@@ -16,25 +16,32 @@ router = APIRouter()
 
 
 class ScanRequest(BaseModel):
-    qr_jwt: str
+    qr_jwt: Optional[str] = None
+    sahayak_id: Optional[str] = None
     purpose: str = "verification"
 
 
 @router.post("/scan")
 async def scan_qr(req: ScanRequest, officer: Officer = Depends(require_officer)):
-    """Log a QR scan and return citizen profile."""
-    # Verify the QR JWT
-    try:
-        payload = decode_token(req.qr_jwt)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="INVALID QR — Token tampered or expired. Do not proceed.")
+    """Log a QR scan or manual search and return citizen profile."""
+    payload = {}
+    
+    if req.qr_jwt:
+        # Verify the QR JWT
+        try:
+            payload = decode_token(req.qr_jwt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="INVALID QR — Token tampered or expired. Do not proceed.")
 
-    if payload.get("type") != "qr":
-        raise HTTPException(status_code=400, detail="Invalid QR token type")
+        if payload.get("type") != "qr":
+            raise HTTPException(status_code=400, detail="Invalid QR token type")
+        sahayak_id = payload.get("sub")
+    elif req.sahayak_id:
+        sahayak_id = req.sahayak_id
+    else:
+        raise HTTPException(status_code=400, detail="Provide qr_jwt or sahayak_id")
 
-    sahayak_id = payload.get("sub")
-
-    # Log the scan
+    # Log the scan or manual entry
     qr_token = await QRToken.find_one(
         QRToken.sahayak_id == sahayak_id,
         QRToken.is_revoked == False

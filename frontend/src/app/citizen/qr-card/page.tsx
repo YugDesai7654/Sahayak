@@ -116,7 +116,6 @@ export default function QRCardPage() {
               </div>
               <div className="flex justify-between text-[10px] mt-3 opacity-50">
                 <span>Issued: {issuedAt}</span>
-                <span>Expires: {expiresAt}</span>
               </div>
             </div>
           </div>
@@ -140,9 +139,6 @@ export default function QRCardPage() {
             setDownloading(false);
           }} disabled={downloading} className="btn-primary text-sm px-6 py-3 disabled:opacity-50">
             📄 {downloading ? t('Downloading...', 'डाउनलोड हो रहा है...') : t('Download PDF', 'PDF डाउनलोड करें')}
-          </button>
-          <button onClick={async () => { await citizenApi.refreshQR(); loadQR(); }} className="btn-secondary text-sm px-6 py-3">
-            🔄 {t('Refresh QR', 'QR ताज़ा करें')}
           </button>
           <button onClick={() => {
             if (navigator.share) {

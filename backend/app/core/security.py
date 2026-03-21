@@ -98,10 +98,10 @@ def create_refresh_token(data: dict) -> str:
 
 
 def create_qr_token(data: dict) -> str:
-    """Sign a QR payload with 1-year expiry using the same RS256 key pair."""
+    """Sign a QR payload with 100-year expiry using the same RS256 key pair."""
     to_encode = data.copy()
     to_encode.update({
-        "exp": datetime.now(timezone.utc) + timedelta(days=365),
+        "exp": datetime.now(timezone.utc) + timedelta(days=36500),
         "iat": datetime.now(timezone.utc),
         "type": "qr"
     })

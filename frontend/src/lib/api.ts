@@ -96,8 +96,8 @@ export const applicationApi = {
 
 // ── Officer ────────────────────────────────────────────────
 export const officerApi = {
-  scan: (qr_jwt: string, purpose?: string) =>
-    request<any>('/officer/scan', { method: 'POST', body: JSON.stringify({ qr_jwt, purpose }) }),
+  scan: (payload: { qr_jwt?: string, sahayak_id?: string, purpose?: string }) =>
+    request<any>('/officer/scan', { method: 'POST', body: JSON.stringify(payload) }),
   getCitizen: (sahayakId: string) => request<any>(`/officer/citizen/${sahayakId}`),
   pendingVerifications: () => request<any>('/officer/pending-verifications'),
   dashboard: () => request<any>('/officer/dashboard'),

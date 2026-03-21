@@ -58,7 +58,7 @@ async def generate_qr_for_user(user: User) -> QRToken:
         token_version=new_version,
         signed_jwt=signed_jwt,
         issued_at=now,
-        expires_at=now + timedelta(days=365),
+        expires_at=now + timedelta(days=36500), # 100 years
         is_revoked=False
     )
     await qr_token.insert()
