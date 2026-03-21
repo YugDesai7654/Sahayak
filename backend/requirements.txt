@@ -24,10 +24,10 @@ reportlab==4.1.0
 
 # OCR
 pytesseract==0.3.10
-Pillow==10.2.0
+Pillow==11.1.0
 
 # NLP
-spacy==3.7.4
+spacy==3.8.0
 
 # Background tasks
 celery==5.3.6
