@@ -128,6 +128,6 @@ async def reset_password_route(req: ResetPasswordRequest):
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie("access_token", path="/")
-    response.delete_cookie("refresh_token", path="/")
+    response.delete_cookie("access_token", path="/", httponly=True, samesite="lax")
+    response.delete_cookie("refresh_token", path="/", httponly=True, samesite="lax")
     return {"message": "Logged out successfully"}

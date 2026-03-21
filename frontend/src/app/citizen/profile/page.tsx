@@ -10,6 +10,22 @@ const STATES = ['Gujarat', 'Rajasthan', 'Maharashtra', 'Karnataka', 'Tamil Nadu'
 const CASTES = [{ value: 'general', label: 'General' }, { value: 'OBC', label: 'OBC' }, { value: 'SC', label: 'SC' }, { value: 'ST', label: 'ST' }];
 const RATION = [{ value: 'APL', label: 'APL' }, { value: 'BPL', label: 'BPL' }, { value: 'AAY', label: 'AAY' }];
 
+const Field = ({ label, field, type = 'text', options, form, up }: any) => (
+  <div>
+    <label className="label">{label}</label>
+    {options ? (
+      <select value={form[field] || ''} onChange={e => up(field, e.target.value)} className="input-field">
+        <option value="">Select...</option>
+        {options.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    ) : type === 'checkbox' ? (
+      <label className="flex items-center gap-2"><input type="checkbox" checked={form[field] || false} onChange={e => up(field, e.target.checked)} className="w-5 h-5" /> Yes</label>
+    ) : (
+      <input type={type} value={form[field] || ''} onChange={e => up(field, type === 'number' ? parseFloat(e.target.value) || '' : e.target.value)} className="input-field" />
+    )}
+  </div>
+);
+
 export default function ProfilePage() {
   const { lang } = useAuthStore();
   const [step, setStep] = useState(0);
@@ -40,22 +56,6 @@ export default function ProfilePage() {
     setSaving(false);
   };
 
-  const Field = ({ label, field, type = 'text', options, children }: any) => (
-    <div>
-      <label className="label">{label}</label>
-      {options ? (
-        <select value={form[field] || ''} onChange={e => up(field, e.target.value)} className="input-field">
-          <option value="">Select...</option>
-          {options.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-      ) : type === 'checkbox' ? (
-        <label className="flex items-center gap-2"><input type="checkbox" checked={form[field] || false} onChange={e => up(field, e.target.checked)} className="w-5 h-5" /> Yes</label>
-      ) : (
-        <input type={type} value={form[field] || ''} onChange={e => up(field, type === 'number' ? parseFloat(e.target.value) || '' : e.target.value)} className="input-field" />
-      )}
-    </div>
-  );
-
   if (loading) return <div className="min-h-screen bg-surface p-6"><div className="max-w-2xl mx-auto space-y-4">{[1,2,3,4].map(i => <div key={i} className="skeleton h-16 rounded-xl" />)}</div></div>;
 
   return (
@@ -79,37 +79,37 @@ export default function ProfilePage() {
 
         <div className="card space-y-4">
           {step === 0 && <>
-            <Field label={t('Full Name', 'पूरा नाम')} field="name" />
-            <Field label={t('Date of Birth', 'जन्म तिथि')} field="dob" type="date" />
-            <Field label={t('Gender', 'लिंग')} field="gender" options={[{value:'male',label:'Male'},{value:'female',label:'Female'},{value:'other',label:'Other'}]} />
-            <Field label={t('Aadhaar Last 4', 'आधार अंतिम 4')} field="aadhaar_last4" />
-            <Field label={t('Phone', 'फ़ोन')} field="phone" />
+            <Field form={form} up={up} label={t('Full Name', 'पूरा नाम')} field="name" />
+            <Field form={form} up={up} label={t('Date of Birth', 'जन्म तिथि')} field="dob" type="date" />
+            <Field form={form} up={up} label={t('Gender', 'लिंग')} field="gender" options={[{value:'male',label:'Male'},{value:'female',label:'Female'},{value:'other',label:'Other'}]} />
+            <Field form={form} up={up} label={t('Aadhaar Last 4', 'आधार अंतिम 4')} field="aadhaar_last4" />
+            <Field form={form} up={up} label={t('Phone', 'फ़ोन')} field="phone" />
           </>}
           {step === 1 && <>
-            <Field label={t('State', 'राज्य')} field="state" options={STATES.map(s => ({value:s,label:s}))} />
-            <Field label={t('District', 'जिला')} field="district" />
-            <Field label={t('Taluka', 'तहसील')} field="taluka" />
-            <Field label={t('Village', 'गाँव')} field="village" />
-            <Field label={t('Pincode', 'पिनकोड')} field="pincode" />
+            <Field form={form} up={up} label={t('State', 'राज्य')} field="state" options={STATES.map(s => ({value:s,label:s}))} />
+            <Field form={form} up={up} label={t('District', 'जिला')} field="district" />
+            <Field form={form} up={up} label={t('Taluka', 'तहसील')} field="taluka" />
+            <Field form={form} up={up} label={t('Village', 'गाँव')} field="village" />
+            <Field form={form} up={up} label={t('Pincode', 'पिनकोड')} field="pincode" />
           </>}
           {step === 2 && <>
-            <Field label={t('Annual Income (₹)', 'वार्षिक आय (₹)')} field="income_annual" type="number" />
-            <Field label={t('Income Source', 'आय स्रोत')} field="income_source" />
-            <Field label={t('BPL Status', 'बीपीएल स्थिति')} field="is_bpl" type="checkbox" />
-            <Field label={t('BPL Card Number', 'बीपीएल कार्ड नंबर')} field="bpl_card_number" />
-            <Field label={t('Ration Card Type', 'राशन कार्ड प्रकार')} field="ration_card_type" options={RATION} />
-            <Field label={t('Bank Account Last 4', 'बैंक खाता अंतिम 4')} field="bank_account_number_last4" />
-            <Field label={t('IFSC Code', 'IFSC कोड')} field="ifsc_code" />
+            <Field form={form} up={up} label={t('Annual Income (₹)', 'वार्षिक आय (₹)')} field="income_annual" type="number" />
+            <Field form={form} up={up} label={t('Income Source', 'आय स्रोत')} field="income_source" />
+            <Field form={form} up={up} label={t('BPL Status', 'बीपीएल स्थिति')} field="is_bpl" type="checkbox" />
+            <Field form={form} up={up} label={t('BPL Card Number', 'बीपीएल कार्ड नंबर')} field="bpl_card_number" />
+            <Field form={form} up={up} label={t('Ration Card Type', 'राशन कार्ड प्रकार')} field="ration_card_type" options={RATION} />
+            <Field form={form} up={up} label={t('Bank Account Last 4', 'बैंक खाता अंतिम 4')} field="bank_account_number_last4" />
+            <Field form={form} up={up} label={t('IFSC Code', 'IFSC कोड')} field="ifsc_code" />
           </>}
           {step === 3 && <>
-            <Field label={t('Caste Category', 'जाति श्रेणी')} field="caste_category" options={CASTES} />
-            <Field label={t('Religion', 'धर्म')} field="religion" />
-            <Field label={t('Occupation', 'व्यवसाय')} field="occupation" />
-            <Field label={t('Land Holding (acres)', 'भूमि (एकड़)')} field="land_holding_acres" type="number" />
-            <Field label={t('Disability Type', 'विकलांगता प्रकार')} field="disability_type" />
-            <Field label={t('Disability %', 'विकलांगता %')} field="disability_percentage" type="number" />
-            <Field label={t('Minority Status', 'अल्पसंख्यक')} field="is_minority" type="checkbox" />
-            <Field label={t('Education Level', 'शिक्षा स्तर')} field="education_level" />
+            <Field form={form} up={up} label={t('Caste Category', 'जाति श्रेणी')} field="caste_category" options={CASTES} />
+            <Field form={form} up={up} label={t('Religion', 'धर्म')} field="religion" />
+            <Field form={form} up={up} label={t('Occupation', 'व्यवसाय')} field="occupation" />
+            <Field form={form} up={up} label={t('Land Holding (acres)', 'भूमि (एकड़)')} field="land_holding_acres" type="number" />
+            <Field form={form} up={up} label={t('Disability Type', 'विकलांगता प्रकार')} field="disability_type" />
+            <Field form={form} up={up} label={t('Disability %', 'विकलांगता %')} field="disability_percentage" type="number" />
+            <Field form={form} up={up} label={t('Minority Status', 'अल्पसंख्यक')} field="is_minority" type="checkbox" />
+            <Field form={form} up={up} label={t('Education Level', 'शिक्षा स्तर')} field="education_level" />
           </>}
           {step === 4 && <>
             <p className="text-gray-600 text-sm">{t('Add family members to match them with schemes too.', 'योजना मिलान के लिए परिवार सदस्य जोड़ें।')}</p>
