@@ -159,3 +159,92 @@ async def officer_dashboard(officer: Officer = Depends(require_officer)):
             "metadata": s.metadata
         } for s in recent_scans]
     }
+
+
+class ApplicationDecisionRequest(BaseModel):
+    decision: str  # approved | rejected
+    reason: Optional[str] = None
+
+
+@router.get("/applications")
+async def list_district_applications(officer: Officer = Depends(require_officer)):
+    """List all submitted applications in the officer's district."""
+    # Find all users in this district
+    users = await User.find({"profile.district": officer.district}).to_list()
+    user_ids = [str(u.id) for u in users]
+
+    from beanie.operators import In
+    applications = await Application.find(In(Application.user_id, user_ids)).sort(-Application.last_updated_at).to_list()
+
+    return {
+        "applications": [{
+            "application_id": a.application_id,
+            "scheme_name": a.scheme_name,
+            "user_id": a.user_id,
+            "citizen_name": next((u.profile.name for u in users if str(u.id) == a.user_id), "Unknown"),
+            "sahayak_id": next((u.sahayak_id for u in users if str(u.id) == a.user_id), "Unknown"),
+            "overall_status": a.overall_status,
+            "submitted_at": a.submitted_at.isoformat() if a.submitted_at else None,
+            "has_pending_offline": any(f.status == "pending" for f in a.offline_verification_fields)
+        } for a in applications],
+        "total": len(applications)
+    }
+
+
+@router.patch("/applications/{app_id}/decision")
+async def decide_application(app_id: str, req: ApplicationDecisionRequest, officer: Officer = Depends(require_officer)):
+    """Accept or reject an application. Ensures pending offline items are done."""
+    from app.models.application import StatusHistoryEntry
+    
+    application = await Application.find_one(Application.application_id == app_id)
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    # Verify user is in officer's district
+    user = await User.get(application.user_id)
+    if not user or user.profile.district != officer.district:
+        raise HTTPException(status_code=403, detail="Application outside your district jurisdiction")
+
+    if req.decision not in ("approved", "rejected"):
+        raise HTTPException(status_code=400, detail="Decision must be 'approved' or 'rejected'")
+
+    # Prevent approval if offline verification is pending
+    if req.decision == "approved":
+        pending_fields = [f for f in application.offline_verification_fields if f.status == "pending"]
+        if pending_fields:
+            raise HTTPException(
+                status_code=400, 
+                detail="Cannot approve. Citizen has physical verification items pending. Please view their QR first."
+            )
+
+    application.overall_status = req.decision
+    if req.decision == "rejected" and req.reason:
+        application.rejection_reason = req.reason
+
+    application.status_history.append(StatusHistoryEntry(
+        status=req.decision,
+        timestamp=datetime.now(timezone.utc),
+        actor=officer.officer_id,
+        note=f"Officer final decision: {req.decision} - {req.reason or ''}"
+    ))
+    
+    application.last_updated_at = datetime.now(timezone.utc)
+    await application.save()
+
+    # Update enrolled scheme status for citizen
+    if user:
+        for enrolled in user.enrolled_schemes:
+            if enrolled.scheme_id == application.scheme_id:
+                enrolled.status = req.decision
+        await user.save()
+
+    # Audit log
+    await AuditLog(
+        event_type=f"application_{req.decision}",
+        user_id=str(user.id),
+        actor_id=officer.officer_id,
+        actor_role="officer",
+        metadata={"application_id": app_id, "reason": req.reason}
+    ).insert()
+
+    return {"message": f"Application {req.decision}", "status": req.decision}

@@ -27,6 +27,17 @@ async def create_application(
     if not scheme.is_active:
         raise ValueError("Scheme is not active")
 
+    # Check for existing application
+    existing_app = await Application.find_one(
+        Application.user_id == str(user.id),
+        Application.scheme_id == scheme_id
+    )
+    if existing_app:
+        raise ValueError(
+            f"You already have an application for this scheme ({existing_app.overall_status}). "
+            "Please check 'My Applications' to track its status."
+        )
+
     # Build offline verification fields from form
     offline_fields = []
     if scheme.application_form:
@@ -160,6 +171,8 @@ async def verify_offline_field(
     return application
 
 
+from beanie.operators import In
+
 async def get_pending_verifications(district: str) -> List[dict]:
     """Get all applications with pending offline verifications in a district."""
     # Find users in this district
@@ -170,7 +183,7 @@ async def get_pending_verifications(district: str) -> List[dict]:
 
     applications = await Application.find(
         Application.overall_status == "pending_offline_verification",
-        {"user_id": {"$in": user_ids}}
+        In(Application.user_id, user_ids)
     ).to_list()
 
     result = []

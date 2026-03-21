@@ -58,16 +58,25 @@ export default function OfficerDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 gap-4 mb-8">
+        <div className="grid md:grid-cols-3 gap-4 mb-8">
           <Link href="/officer/scan" className="card bg-gradient-to-r from-tricolor-green to-emerald-600 text-white hover:scale-[1.02] transition-transform">
             <div className="text-4xl mb-3">📷</div>
             <h3 className="text-xl font-bold">Scan QR Code</h3>
             <p className="text-sm mt-1 opacity-80">Scan citizen&apos;s Sahayak QR to verify identity & process verifications</p>
           </Link>
-          <Link href="/officer/verifications" className="card bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:scale-[1.02] transition-transform">
-            <div className="text-4xl mb-3">📋</div>
-            <h3 className="text-xl font-bold">Pending Verifications</h3>
-            <p className="text-sm mt-1 opacity-80">View and process offline field verifications for applications</p>
+          <Link href="/officer/verifications" className="card bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:scale-[1.02] transition-transform flex flex-col justify-between">
+            <div>
+              <div className="text-4xl mb-3">📋</div>
+              <h3 className="text-xl font-bold">Pending Offline</h3>
+            </div>
+            <p className="text-sm mt-1 opacity-80 mt-auto">Physical document checks</p>
+          </Link>
+          <Link href="/officer/applications" className="card bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:scale-[1.02] transition-transform flex flex-col justify-between">
+            <div>
+              <div className="text-4xl mb-3">📁</div>
+              <h3 className="text-xl font-bold">All Applications</h3>
+            </div>
+            <p className="text-sm mt-1 opacity-80 mt-auto">Review and approve district applications</p>
           </Link>
         </div>
 

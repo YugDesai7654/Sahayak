@@ -96,25 +96,28 @@ export const applicationApi = {
 
 // ── Officer ────────────────────────────────────────────────
 export const officerApi = {
-  scan: (qr_jwt: string, purpose: string = 'verification') =>
+  scan: (qr_jwt: string, purpose?: string) =>
     request<any>('/officer/scan', { method: 'POST', body: JSON.stringify({ qr_jwt, purpose }) }),
   getCitizen: (sahayakId: string) => request<any>(`/officer/citizen/${sahayakId}`),
   pendingVerifications: () => request<any>('/officer/pending-verifications'),
   dashboard: () => request<any>('/officer/dashboard'),
+  applications: () => request<any>('/officer/applications'),
+  decideApplication: (appId: string, decision: 'approved' | 'rejected', reason?: string) =>
+    request(`/officer/applications/${appId}/decision`, { method: 'PATCH', body: JSON.stringify({ decision, reason }) }),
 };
 
 // ── Admin ──────────────────────────────────────────────────
 export const adminApi = {
+  dashboard: () => request<any>('/admin/dashboard'),
+
+  // Schemes
   listSchemes: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return request<any>(`/admin/schemes${qs}`);
   },
-  createScheme: (data: any) =>
-    request<any>('/admin/schemes', { method: 'POST', body: JSON.stringify(data) }),
-  updateScheme: (id: string, data: any) =>
-    request(`/admin/schemes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  deleteScheme: (id: string) =>
-    request(`/admin/schemes/${id}`, { method: 'DELETE' }),
+  createScheme: (data: any) => request<any>('/admin/schemes', { method: 'POST', body: JSON.stringify(data) }),
+  updateScheme: (id: string, data: any) => request(`/admin/schemes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteScheme: (id: string) => request(`/admin/schemes/${id}`, { method: 'DELETE' }),
 
   createAdmin: (data: any) =>
     request<any>('/admin/admins', { method: 'POST', body: JSON.stringify(data) }),

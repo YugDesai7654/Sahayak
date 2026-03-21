@@ -15,7 +15,7 @@ export default function PendingVerificationsPage() {
 
   if (loading) return <div className="min-h-screen bg-surface p-6"><div className="max-w-3xl mx-auto space-y-4">{[1,2,3].map(i => <div key={i} className="skeleton h-24 rounded-2xl" />)}</div></div>;
 
-  const apps = data?.applications || [];
+  const apps = data?.pending_verifications || [];
 
   return (
     <div className="min-h-screen bg-surface">
