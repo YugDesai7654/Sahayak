@@ -3,23 +3,26 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
+import { useAuthHydrated } from '@/hooks/useAuthHydrated';
 import { officerApi } from '@/lib/api';
 
 export default function OfficerDashboard() {
   const { user, logout } = useAuthStore();
+  const authHydrated = useAuthHydrated();
   const router = useRouter();
   const [dashboard, setDashboard] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!user || user.role !== 'officer') { router.push('/officer/auth/login'); return; }
     officerApi.dashboard().then(res => { setDashboard(res); setLoading(false); }).catch(() => setLoading(false));
-  }, [user]);
+  }, [user, authHydrated]);
 
   const handleLogout = async () => { try { await authApi(); } catch {} logout(); router.push('/officer/auth/login'); };
   async function authApi() { const { authApi } = await import('@/lib/api'); await authApi.logout(); }
 
-  if (loading) return <div className="min-h-screen bg-surface p-6"><div className="max-w-6xl mx-auto space-y-6">{[1,2,3].map(i => <div key={i} className="skeleton h-28 rounded-2xl" />)}</div></div>;
+  if (!authHydrated || loading) return <div className="min-h-screen bg-surface p-6"><div className="max-w-6xl mx-auto space-y-6">{[1,2,3].map(i => <div key={i} className="skeleton h-28 rounded-2xl" />)}</div></div>;
 
   return (
     <div className="min-h-screen bg-surface">

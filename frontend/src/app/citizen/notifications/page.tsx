@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
+import { useAuthHydrated } from '@/hooks/useAuthHydrated';
 import { notificationApi, suggestionApi } from '@/lib/api';
 
 interface Notification {
@@ -20,6 +21,7 @@ interface Notification {
 
 export default function NotificationsPage() {
   const { user, lang } = useAuthStore();
+  const authHydrated = useAuthHydrated();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,9 +30,10 @@ export default function NotificationsPage() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!user || user.role !== 'citizen') { router.push('/citizen/auth/login'); return; }
     loadNotifications();
-  }, [user, filter]);
+  }, [user, filter, authHydrated]);
 
   async function loadNotifications() {
     try {
@@ -99,7 +102,7 @@ export default function NotificationsPage() {
     low: 'border-l-gray-300 bg-white',
   };
 
-  if (loading) {
+  if (!authHydrated || loading) {
     return (
       <div className="min-h-screen bg-surface p-6">
         <div className="max-w-4xl mx-auto space-y-4">

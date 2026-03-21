@@ -3,19 +3,22 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
+import { useAuthHydrated } from '@/hooks/useAuthHydrated';
 import { adminApi } from '@/lib/api';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuthStore();
+  const authHydrated = useAuthHydrated();
   const router = useRouter();
   const [analytics, setAnalytics] = useState<any>({});
   const [citizenStats, setCitizenStats] = useState<any>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!user || user.role !== 'admin') { router.push('/admin/auth/login'); return; }
     loadData();
-  }, [user]);
+  }, [user, authHydrated]);
 
   async function loadData() {
     try {
@@ -40,7 +43,7 @@ export default function AdminDashboard() {
     return labels[t || ''] || t || '';
   };
 
-  if (loading) return <div className="min-h-screen bg-surface p-6"><div className="max-w-6xl mx-auto space-y-6">{[1,2,3,4].map(i => <div key={i} className="skeleton h-28 rounded-2xl" />)}</div></div>;
+  if (!authHydrated || loading) return <div className="min-h-screen bg-surface p-6"><div className="max-w-6xl mx-auto space-y-6">{[1,2,3,4].map(i => <div key={i} className="skeleton h-28 rounded-2xl" />)}</div></div>;
 
   return (
     <div className="min-h-screen bg-surface">

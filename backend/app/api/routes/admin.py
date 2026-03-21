@@ -18,6 +18,10 @@ from app.models.audit_log import AuditLog
 router = APIRouter()
 
 
+class SchemeIdProjection(BaseModel):
+    scheme_id: str
+
+
 # ── Scheme Models ───────────────────────────────────────────────
 
 class SchemeFieldRequest(BaseModel):
@@ -496,7 +500,7 @@ async def scheme_analytics(admin: Admin = Depends(require_admin)):
     total_schemes = await Scheme.find(query_filter).count()
     active_schemes = await Scheme.find({"is_active": True, **query_filter}).count()
 
-    schemes = await Scheme.find(query_filter).project({"scheme_id": 1}).to_list()
+    schemes = await Scheme.find(query_filter).project(SchemeIdProjection).to_list()
     scheme_ids = [s.scheme_id for s in schemes]
 
     app_filter = {"scheme_id": {"$in": scheme_ids}} if scheme_ids else {"scheme_id": "NONE"}
@@ -574,7 +578,7 @@ async def verification_analytics(admin: Admin = Depends(require_admin)):
         query_filter["scope_state"] = admin.jurisdiction.state
         query_filter["scope_district"] = admin.jurisdiction.district
 
-    schemes = await Scheme.find(query_filter).project({"scheme_id": 1}).to_list()
+    schemes = await Scheme.find(query_filter).project(SchemeIdProjection).to_list()
     scheme_ids = [s.scheme_id for s in schemes]
 
     app_filter = {"scheme_id": {"$in": scheme_ids}, "overall_status": "pending_offline_verification"}

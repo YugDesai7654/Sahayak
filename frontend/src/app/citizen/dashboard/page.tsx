@@ -3,11 +3,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
+import { useAuthHydrated } from '@/hooks/useAuthHydrated';
 import { citizenApi, schemeApi, applicationApi, notificationApi, suggestionApi } from '@/lib/api';
 import { matchSchemes } from '@/lib/eligibility-engine';
 
 export default function CitizenDashboard() {
   const { user, logout, lang, setLang, isOffline } = useAuthStore();
+  const authHydrated = useAuthHydrated();
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [matchResult, setMatchResult] = useState<any>(null);
@@ -17,9 +19,10 @@ export default function CitizenDashboard() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!user || user.role !== 'citizen') { router.push('/citizen/auth/login'); return; }
     loadData();
-  }, [user]);
+  }, [user, authHydrated]);
 
   async function loadData() {
     try {
@@ -57,7 +60,7 @@ export default function CitizenDashboard() {
     router.push('/citizen/auth/login');
   };
 
-  if (loading) {
+  if (!authHydrated || loading) {
     return (
       <div className="min-h-screen bg-surface p-6">
         <div className="max-w-6xl mx-auto space-y-6">
