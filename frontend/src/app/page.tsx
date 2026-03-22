@@ -30,10 +30,7 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-6 pt-20 pb-32">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div className="page-enter">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-accent/20 rounded-full text-accent-light text-sm font-medium mb-6">
-              <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-              Offline-First Platform
-            </div>
+
             <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
               Your Gateway to<br />
               <span className="text-accent">Government Schemes</span>
