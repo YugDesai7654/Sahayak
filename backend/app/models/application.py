@@ -53,3 +53,8 @@ class Application(Document):
 
     class Settings:
         name = "applications"
+        indexes = [
+            "user_id",
+            "scheme_id",
+            "overall_status",
+        ]

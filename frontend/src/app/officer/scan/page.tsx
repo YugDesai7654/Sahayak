@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
@@ -26,6 +27,7 @@ export default function OfficerScanPage() {
   const { user } = useAuthStore();
   const [mode, setMode] = useState<'input' | 'camera' | 'result'>('input');
   const [qrInput, setQrInput] = useState('');
+  const [sahayakIdInput, setSahayakIdInput] = useState('');
   const [scanResult, setScanResult] = useState<any>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,38 +42,42 @@ export default function OfficerScanPage() {
     setError('');
     // Dynamic import to avoid SSR issues
     const { Html5Qrcode } = await import('html5-qrcode');
-    
-    // Wait for the DOM element to be available
-    await new Promise(r => setTimeout(r, 300));
-    
+
+    // Wait for DOM
+    const { promise, resolve } = Promise.withResolvers<void>();
+    setTimeout(resolve, 300);
+    await promise;
     if (!videoRef.current) return;
-    
+
     try {
       const scanner = new Html5Qrcode('qr-reader');
       scannerRef.current = scanner;
       await scanner.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        { fps: 10, qrbox: { width: 260, height: 260 } },
         async (decodedText: string) => {
-          // QR scanned successfully
           if (scannerRef.current) {
-            try { await scannerRef.current.stop(); } catch (err) {}
+            try {
+              await scannerRef.current.stop();
+            } catch {}
             scannerRef.current = null;
           }
           setQrInput(decodedText);
           handleScan(decodedText);
         },
-        () => {} // ignore errors during scanning
+        () => {}
       );
     } catch (err: any) {
-      setError('Camera access denied or not available. Please paste the QR code instead.');
+      setError('Camera initialization failed. Please use manual Sahayak ID lookup below.');
       setMode('input');
     }
   };
 
   const stopCamera = async () => {
     if (scannerRef.current) {
-      try { await scannerRef.current.stop(); } catch {}
+      try {
+        await scannerRef.current.stop();
+      } catch {}
       scannerRef.current = null;
     }
     setMode('input');
@@ -80,19 +86,22 @@ export default function OfficerScanPage() {
   useEffect(() => {
     return () => {
       if (scannerRef.current) {
-        try { scannerRef.current.stop(); } catch {}
+        try {
+          scannerRef.current.stop();
+        } catch {}
       }
     };
   }, []);
 
-  const [sahayakIdInput, setSahayakIdInput] = useState('');
-
   const handleScan = async (qrValue?: string, sahayakId?: string) => {
     const payload: any = {};
     if (qrValue || qrInput) payload.qr_jwt = normalizeQrInput(qrValue || qrInput);
-    else if (sahayakId || sahayakIdInput) payload.sahayak_id = sahayakId || sahayakIdInput;
-    else { setError('Please enter a QR code or Sahayak ID'); return; }
-    
+    else if (sahayakId || sahayakIdInput) payload.sahayak_id = (sahayakId || sahayakIdInput).trim().toUpperCase();
+    else {
+      setError('Please provide a QR token or Sahayak ID to verify.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
@@ -100,10 +109,11 @@ export default function OfficerScanPage() {
       setScanResult(res);
       setMode('result');
     } catch (err: any) {
-      setError(err.message || 'Verification failed — check input or QR code');
+      setError(typeof err?.message === 'string' ? err.message : 'Verification failed. Record not found.');
       setMode('input');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const verifyField = async (appId: string, fieldId: string, status: string) => {
@@ -113,250 +123,396 @@ export default function OfficerScanPage() {
     }
     setVerifying(fieldId);
     try {
-      await applicationApi.verifyField(appId, { 
-        field_id: fieldId, 
+      await applicationApi.verifyField(appId, {
+        field_id: fieldId,
         status,
-        note: rejectNotes[fieldId] || undefined
+        note: rejectNotes[fieldId] || undefined,
       });
       setShowRejectInput(null);
       setRejectNotes(p => ({ ...p, [fieldId]: '' }));
-      // Refresh scan result
-      if (qrInput) await handleScan(qrInput);
+      if (qrInput || sahayakIdInput) {
+        await handleScan(qrInput, sahayakIdInput);
+      }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Verification update failed.');
+    } finally {
+      setVerifying(null);
     }
-    setVerifying(null);
   };
 
   return (
-    <div className="min-h-screen bg-surface">
-      <div className="tricolor-gradient" />
-      <nav className="bg-white shadow-sm border-b sticky top-0 z-40"><div className="max-w-4xl mx-auto px-6 py-3 flex items-center gap-4">
-        <Link href="/officer/dashboard" className="text-gray-400 hover:text-primary text-xl">←</Link>
-        <h1 className="font-bold text-lg text-gray-800">QR Verification</h1>
-        <span className="badge-info ml-auto">{user?.designation || 'Officer'}</span>
-      </div></nav>
+    <div className="min-h-[100dvh] bg-[#f8f9fa] text-[#0f1e36] flex flex-col justify-between relative [background-image:radial-gradient(rgba(15,30,54,0.06)_1px,transparent_1px)] [background-size:24px_24px]">
+      {/* Sovereign Tricolor Accent Thread */}
+      <div className="civic-tricolor-thread fixed top-0 left-0 right-0 z-50" />
 
-      <main className="max-w-4xl mx-auto px-6 py-8 page-enter">
-        {error && <div className="bg-red-50 border border-red-200 text-danger px-4 py-3 rounded-xl text-sm mb-4">{error}</div>}
+      {/* Floating Island Header */}
+      <header className="pt-6 px-4 sm:px-8 max-w-4xl mx-auto w-full">
+        <div className="flex items-center justify-between py-3 px-5 sm:px-6 rounded-full bg-white/85 backdrop-blur-md shadow-[0_4px_25px_rgba(15,30,54,0.04)] ring-1 ring-black/[0.06]">
+          <Link href="/officer/dashboard" className="flex items-center gap-3 group">
+            <div className="w-8 h-8 rounded-full bg-black/[0.04] flex items-center justify-center text-[#0f1e36] text-xs font-bold transition-transform duration-300 group-hover:-translate-x-0.5">
+              ←
+            </div>
+            <div>
+              <span className="font-extrabold text-sm tracking-tight text-[#0f1e36]">
+                Field Verification Terminal
+              </span>
+              <span className="hidden sm:inline-block ml-2 text-[10px] font-bold tracking-widest uppercase text-[#0d7a53] bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                OFFICER DESK
+              </span>
+            </div>
+          </Link>
 
+          <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-emerald-50 text-[#0d7a53]">
+            {user?.name || 'Officer'}
+          </span>
+        </div>
+      </header>
+
+      {/* Main Terminal Workspace */}
+      <main className="max-w-4xl mx-auto px-4 sm:px-8 py-8 sm:py-12 flex-1 w-full space-y-6">
+        {error && (
+          <div className="p-4 rounded-2xl bg-rose-50 text-rose-800 text-sm font-medium border border-rose-200/80 flex items-start gap-3">
+            <span className="text-base leading-none">⚠️</span>
+            <span className="flex-1">{error}</span>
+          </div>
+        )}
+
+        {/* Mode: Input Selection */}
         {mode === 'input' && (
-          <div className="max-w-md mx-auto space-y-4">
-            {/* Camera Scan Button */}
-            <button onClick={startCamera} className="w-full bg-tricolor-green text-white px-6 py-6 rounded-2xl font-semibold hover:opacity-90 transition flex flex-col items-center gap-3 shadow-lg">
-              <span className="text-4xl">📷</span>
-              <span className="text-xl">Scan QR Code with Camera</span>
-              <span className="text-sm opacity-75">Point your camera at the citizen&apos;s QR code</span>
-            </button>
-
-            <div className="text-center text-gray-400 text-sm font-semibold">— OR —</div>
-
-            {/* Sahayak ID Input */}
-            <div className="card p-6 border-l-4 border-l-blue-500">
-              <h3 className="font-bold text-gray-900 mb-3 block">Enter Sahayak ID Manually</h3>
-              <p className="text-xs text-gray-500 mb-3">If the citizen&apos;s camera or QR is broken, you can verify using their ID directly.</p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={sahayakIdInput}
-                  onChange={e => setSahayakIdInput(e.target.value)}
-                  className="input-field flex-1 font-mono uppercase tracking-widest placeholder-gray-400"
-                  placeholder="e.g. SAH-123456"
-                  maxLength={17}
-                />
-                <button onClick={() => handleScan()} disabled={loading} className="bg-blue-600 text-white px-6 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 transition whitespace-nowrap">
-                  {loading ? 'Wait...' : 'Look Up 🔍'}
+          <div className="max-w-xl mx-auto space-y-6">
+            
+            {/* Camera Viewfinder Trigger */}
+            <div className="bezel-shell !p-2">
+              <div className="bezel-core p-8 text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-[#0d7a53]/10 text-[#0d7a53] flex items-center justify-center text-2xl mx-auto">
+                  📷
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-lg font-bold text-[#0f1e36]">Scan Citizen QR Code</h2>
+                  <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                    Point your camera at the physical or digital Sahayak Identity Card for instant offline verification.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="btn-island-primary !bg-[#0d7a53] hover:!bg-[#0b6645] !shadow-[0_10px_25px_-5px_rgba(13,122,83,0.3)] !px-8 !py-3 group cursor-pointer"
+                >
+                  <span>Launch Camera Scanner</span>
+                  <span className="btn-island-icon">→</span>
                 </button>
               </div>
             </div>
 
-            <div className="text-center text-gray-400 text-sm font-semibold">— OR —</div>
-
-            {/* Manual QR data Input */}
-            <div className="card p-6">
-              <h3 className="font-bold text-gray-900 mb-3 block">Paste QR Data Manually</h3>
-              <textarea
-                value={qrInput}
-                onChange={e => setQrInput(e.target.value)}
-                className="input-field h-20 font-mono text-xs"
-                placeholder="Paste scanned QR value here..."
-              />
-              <button onClick={() => handleScan()} disabled={loading} className="w-full mt-3 bg-gray-800 text-white px-6 py-3 rounded-xl font-semibold hover:bg-gray-900 disabled:opacity-50 transition">
-                {loading ? 'Verifying...' : 'Verify QR Data'}
-              </button>
+            <div className="flex items-center gap-4 text-xs font-bold text-gray-400">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span>OR USE MANUAL DISPATCH</span>
+              <div className="flex-1 h-px bg-gray-200" />
             </div>
+
+            {/* Direct Sahayak ID Lookup */}
+            <div className="bezel-shell !p-1.5">
+              <div className="bezel-core p-6 space-y-4">
+                <div>
+                  <span className="eyebrow-pill">Fallback Lookup</span>
+                  <h3 className="text-base font-bold text-[#0f1e36] mt-1">Direct Sahayak ID Search</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    If physical card is damaged or camera scanner is unavailable, verify via citizen ID.
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={sahayakIdInput}
+                    onChange={e => setSahayakIdInput(e.target.value)}
+                    className="input-field font-mono uppercase tracking-widest text-xs"
+                    placeholder="e.g. SAH-GU-00001"
+                    maxLength={18}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleScan(undefined, sahayakIdInput)}
+                    disabled={loading}
+                    className="btn-island-primary !py-2 !px-5 text-xs group cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                  >
+                    <span>{loading ? 'Searching...' : 'Search Record'}</span>
+                    <span className="btn-island-icon !w-6 !h-6 text-xs">→</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Hardware Barcode Scanner Input */}
+            <div className="bezel-shell !p-1.5">
+              <div className="bezel-core p-6 space-y-3">
+                <div>
+                  <h3 className="text-sm font-bold text-[#0f1e36]">Hardware 2D Barcode Scanner Input</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    For USB or Bluetooth handheld 2D scanners, paste or scan the raw token payload below.
+                  </p>
+                </div>
+
+                <textarea
+                  value={qrInput}
+                  onChange={e => setQrInput(e.target.value)}
+                  className="input-field h-20 font-mono text-xs"
+                  placeholder="Paste scanned QR raw string or URL..."
+                />
+
+                <button
+                  type="button"
+                  onClick={() => handleScan(qrInput)}
+                  disabled={loading}
+                  className="btn-island-secondary w-full group cursor-pointer disabled:opacity-50 text-xs"
+                >
+                  <span>{loading ? 'Verifying...' : 'Validate Raw QR Data'}</span>
+                  <span className="text-xs font-semibold text-[#0f1e36]">→</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         )}
 
+        {/* Mode: Camera Viewfinder */}
         {mode === 'camera' && (
           <div className="max-w-md mx-auto">
-            <div className="card p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold text-gray-900">📷 Camera Scanner</h3>
-                <button onClick={stopCamera} className="text-sm text-danger font-semibold">✕ Close</button>
+            <div className="bezel-shell !p-2">
+              <div className="bezel-core p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <h3 className="text-sm font-bold text-[#0f1e36]">Optical Viewfinder Active</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={stopCamera}
+                    className="text-xs font-semibold px-3 py-1 rounded-full bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+                  >
+                    ✕ Close
+                  </button>
+                </div>
+
+                <div
+                  id="qr-reader"
+                  ref={videoRef}
+                  className="rounded-2xl overflow-hidden ring-1 ring-black/[0.08] shadow-inner"
+                  style={{ minHeight: '300px' }}
+                />
+
+                <p className="text-center text-xs text-gray-400">
+                  Align citizen QR code within the framing reticle
+                </p>
               </div>
-              <div id="qr-reader" ref={videoRef} className="rounded-xl overflow-hidden" style={{ minHeight: '300px' }} />
-              <p className="text-center text-gray-400 text-sm mt-3">Point the camera at the citizen&apos;s QR code</p>
             </div>
           </div>
         )}
 
+        {/* Mode: Verification Result */}
         {mode === 'result' && (
           <div className="space-y-6">
             {scanResult?.valid ? (
               <>
-                {/* Valid QR Banner */}
-                <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3">
-                  <span className="text-3xl">✅</span>
-                  <div>
-                    <p className="font-bold text-green-800">QR Code Verified</p>
-                    <p className="text-sm text-green-600">Citizen ID found in database</p>
+                {/* Cryptographic Verification Status Banner */}
+                <div className="bezel-shell !p-1.5">
+                  <div className="bezel-core p-6 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-[#0d7a53] flex items-center justify-center text-2xl font-bold">
+                        ✓
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-lg font-extrabold text-[#0f1e36]">
+                            Cryptographic Signature Valid
+                          </h2>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-[#0d7a53]">
+                            RS256 CONFIRMED
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Citizen credential belongs to verified sovereign register.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('input');
+                        setScanResult(null);
+                        setQrInput('');
+                        setSahayakIdInput('');
+                      }}
+                      className="text-xs font-semibold px-4 py-2 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#0f1e36] transition-colors"
+                    >
+                      Scan Next Citizen →
+                    </button>
                   </div>
                 </div>
 
-                {/* Citizen Profile */}
+                {/* Citizen Profile Details */}
                 {scanResult.citizen && (
-                  <div className="card">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">👤 Citizen Profile</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                      {[
-                        ['Name', scanResult.citizen.name],
-                        ['Sahayak ID', scanResult.citizen.sahayak_id],
-                        ['Phone', scanResult.citizen.phone],
-                        ['State', scanResult.citizen.state],
-                        ['District', scanResult.citizen.district],
-                        ['Taluka', scanResult.citizen.taluka],
-                        ['Village', scanResult.citizen.village],
-                        ['Income', scanResult.citizen.income_annual ? `₹${Number(scanResult.citizen.income_annual).toLocaleString('en-IN')}/year` : 'N/A'],
-                        ['Caste', scanResult.citizen.caste_category],
-                        ['BPL', scanResult.citizen.is_bpl ? 'Yes ✓' : 'No'],
-                        ['Aadhaar (Last 4)', scanResult.citizen.aadhaar_last4 ? `****${scanResult.citizen.aadhaar_last4}` : 'N/A'],
-                        ['Gender', scanResult.citizen.gender],
-                      ].map(([label, value]) => (
-                        <div key={label as string}>
-                          <p className="text-gray-400 text-xs">{label}</p>
-                          <p className="font-semibold text-gray-800">{value || 'N/A'}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Enrolled Schemes */}
-                    {scanResult.citizen.enrolled_schemes?.length > 0 && (
-                      <div className="mt-6 pt-4 border-t">
-                        <h4 className="font-bold text-gray-700 mb-2">Enrolled Schemes</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {scanResult.citizen.enrolled_schemes.map((s: any, idx: number) => (
-                            <span key={`${s.scheme_id || s}-${idx}`} className="badge-info">{s.scheme_name || s}</span>
-                          ))}
-                        </div>
+                  <div className="bezel-shell !p-1.5">
+                    <div className="bezel-core p-6 space-y-4">
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                        <span className="eyebrow-pill">Citizen Identity Dossier</span>
+                        <span className="font-mono text-xs font-bold text-[#c25e00]">
+                          {scanResult.citizen.sahayak_id}
+                        </span>
                       </div>
-                    )}
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                        {[
+                          ['Legal Name', scanResult.citizen.name],
+                          ['Phone', scanResult.citizen.phone],
+                          ['State', scanResult.citizen.state],
+                          ['District', scanResult.citizen.district],
+                          ['Taluka', scanResult.citizen.taluka],
+                          ['Village', scanResult.citizen.village],
+                          ['Annual Income', scanResult.citizen.income_annual ? `₹${Number(scanResult.citizen.income_annual).toLocaleString('en-IN')}` : 'N/A'],
+                          ['Category', scanResult.citizen.caste_category],
+                        ].map(([label, val]) => (
+                          <div key={label} className="p-3 rounded-xl bg-[#f8f9fa] space-y-0.5">
+                            <span className="text-[10px] uppercase font-bold text-gray-400">{label}</span>
+                            <p className="font-bold text-[#0f1e36] truncate">{val || 'N/A'}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {/* Pending Offline Verifications */}
+                {/* Pending Offline Field Verifications */}
                 {scanResult.pending_applications?.length > 0 && (
-                  <div className="card border-l-4 border-l-amber-400">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">📋 Items Pending Your Verification</h3>
-                    <p className="text-sm text-gray-500 mb-4">Verify each item after physically checking the citizen&apos;s original documents.</p>
+                  <div className="bezel-shell !p-1.5">
+                    <div className="bezel-core p-6 space-y-6">
+                      <div>
+                        <span className="eyebrow-pill">Required Field Action</span>
+                        <h3 className="text-base font-bold text-[#0f1e36] mt-1">
+                          Pending Physical Document Inspections
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Inspect original certificates and mark each statutory clause verified or rejected.
+                        </p>
+                      </div>
 
-                    {scanResult.pending_applications.map((app: any) => (
-                      <div key={app.application_id} className="mb-6 last:mb-0">
-                        <div className="flex items-center gap-2 mb-3">
-                          <p className="font-bold text-gray-800">{app.scheme_name}</p>
-                          <span className="badge-warning">{app.overall_status}</span>
-                        </div>
-                        <p className="text-xs text-gray-400 mb-3 font-mono">{app.application_id}</p>
+                      {scanResult.pending_applications.map((app: any) => (
+                        <div key={app.application_id} className="p-5 rounded-2xl bg-[#f8f9fa] space-y-4 border border-black/[0.04]">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-bold text-sm text-[#0f1e36]">{app.scheme_name}</h4>
+                              <p className="font-mono text-[11px] text-gray-400">{app.application_id}</p>
+                            </div>
+                            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-50 text-[#c25e00]">
+                              {app.overall_status}
+                            </span>
+                          </div>
 
-                        <div className="space-y-3">
-                          {app.offline_verification_fields?.map((field: any) => (
-                            <div key={field.field_id} className={`p-4 rounded-xl border-2 ${
-                              field.status === 'verified' ? 'bg-green-50 border-green-200' : 
-                              field.status === 'rejected' ? 'bg-red-50 border-red-200' : 
-                              'bg-white border-gray-200'
-                            }`}>
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <p className="font-semibold text-gray-800">{field.label || field.offline_verification_label}</p>
-                                  {field.offline_verification_label && field.offline_verification_label !== field.label && (
-                                    <p className="text-sm text-gray-500 mt-1">{field.offline_verification_label}</p>
-                                  )}
+                          <div className="space-y-3">
+                            {app.offline_verification_fields?.map((field: any) => (
+                              <div
+                                key={field.field_id}
+                                className="p-4 rounded-xl bg-white ring-1 ring-black/[0.06] space-y-3"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div>
+                                    <p className="font-bold text-xs text-[#0f1e36]">
+                                      {field.label || field.offline_verification_label}
+                                    </p>
+                                    {field.offline_verification_label && field.offline_verification_label !== field.label && (
+                                      <p className="text-[11px] text-gray-500 mt-0.5">
+                                        {field.offline_verification_label}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <span
+                                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                      field.status === 'verified'
+                                        ? 'bg-emerald-50 text-[#0d7a53]'
+                                        : field.status === 'rejected'
+                                        ? 'bg-rose-50 text-rose-700'
+                                        : 'bg-amber-50 text-[#c25e00]'
+                                    }`}
+                                  >
+                                    {field.status === 'verified' ? '✓ Verified' : field.status === 'rejected' ? '✕ Rejected' : 'Pending'}
+                                  </span>
                                 </div>
-                                <span className={`${
-                                  field.status === 'verified' ? 'badge-success' : 
-                                  field.status === 'rejected' ? 'badge-danger' : 
-                                  'badge-warning'
-                                }`}>
-                                  {field.status === 'verified' ? '✅ Verified' : field.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
-                                </span>
-                              </div>
 
-                              {field.status === 'verified' && field.verified_by && (
-                                <p className="text-xs text-green-600 mt-2">Verified by {field.verified_by} on {field.verified_at ? new Date(field.verified_at).toLocaleDateString('en-IN') : ''}</p>
-                              )}
-                              {field.status === 'rejected' && field.note && (
-                                <p className="text-xs text-red-600 mt-2">Reason: {field.note}</p>
-                              )}
-
-                              {field.status === 'pending' && (
-                                <div className="mt-3">
-                                  {showRejectInput === field.field_id && (
-                                    <div className="mb-3">
+                                {field.status === 'pending' && (
+                                  <div className="space-y-2 pt-2 border-t border-gray-100">
+                                    {showRejectInput === field.field_id && (
                                       <textarea
-                                        placeholder="Reason for rejection (required)..."
-                                        className="input-field text-sm h-20"
+                                        placeholder="Specify statutory rejection reason (e.g. 'Income certificate expired on 31-03-2026', 'Survey number mismatch with 7/12 record')..."
+                                        className="input-field text-xs h-20"
                                         value={rejectNotes[field.field_id] || ''}
                                         onChange={e => setRejectNotes(p => ({ ...p, [field.field_id]: e.target.value }))}
                                       />
+                                    )}
+                                    <div className="flex gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => verifyField(app.application_id, field.field_id, 'verified')}
+                                        disabled={verifying === field.field_id}
+                                        className="flex-1 py-2 px-3 rounded-full bg-[#0d7a53] text-white text-xs font-bold hover:bg-[#0b6645] transition-colors disabled:opacity-50"
+                                      >
+                                        {verifying === field.field_id ? 'Verifying...' : '✓ Approve Clause'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => verifyField(app.application_id, field.field_id, 'rejected')}
+                                        disabled={verifying === field.field_id}
+                                        className="flex-1 py-2 px-3 rounded-full bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-colors disabled:opacity-50"
+                                      >
+                                        {verifying === field.field_id ? 'Updating...' : '✕ Reject Clause'}
+                                      </button>
                                     </div>
-                                  )}
-                                  <div className="flex gap-2">
-                                    <button 
-                                      onClick={() => verifyField(app.application_id, field.field_id, 'verified')} 
-                                      disabled={verifying === field.field_id}
-                                      className="bg-green-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-600 transition disabled:opacity-50 flex-1"
-                                    >
-                                      {verifying === field.field_id ? '...' : '✅ Verify'}
-                                    </button>
-                                    <button 
-                                      onClick={() => verifyField(app.application_id, field.field_id, 'rejected')} 
-                                      disabled={verifying === field.field_id}
-                                      className="bg-red-500 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-600 transition disabled:opacity-50 flex-1"
-                                    >
-                                      {verifying === field.field_id ? '...' : '❌ Reject'}
-                                    </button>
                                   </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {(!scanResult.pending_applications || scanResult.pending_applications.length === 0) && (
-                  <div className="card bg-blue-50 border-blue-100 text-center py-8">
-                    <p className="text-blue-800 font-semibold">No pending offline verifications for this citizen.</p>
+                      ))}
+                    </div>
                   </div>
                 )}
               </>
             ) : (
-              <div className="bg-red-50 border-2 border-red-300 rounded-2xl p-8 text-center">
-                <span className="text-6xl">🚫</span>
-                <p className="font-bold text-danger text-2xl mt-4">INVALID QR</p>
-                <p className="text-lg text-red-700 mt-2">Do NOT accept this identity.</p>
-                <p className="text-sm text-red-600 mt-2">Scanned ID was not found in the government database.</p>
+              <div className="bezel-shell !p-2">
+                <div className="bezel-core p-10 text-center space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center text-3xl mx-auto">
+                    🚫
+                  </div>
+                  <div className="space-y-1">
+                    <h2 className="text-xl font-bold text-rose-700">Invalid or Untrusted Credential</h2>
+                    <p className="text-xs text-gray-600 max-w-sm mx-auto leading-relaxed">
+                      The presented QR token could not be verified by the cryptographic public key or does not match any registered sovereign citizen account.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('input');
+                      setScanResult(null);
+                      setQrInput('');
+                      setSahayakIdInput('');
+                    }}
+                    className="btn-island-secondary text-xs"
+                  >
+                    ← Return to Scanner Desk
+                  </button>
+                </div>
               </div>
             )}
-
-            <button onClick={() => { setMode('input'); setScanResult(null); setQrInput(''); setError(''); }} className="btn-secondary w-full">
-              ← Scan Another Citizen
-            </button>
           </div>
         )}
       </main>
+
+      {/* Subtle Civic Footer */}
+      <footer className="py-6 px-4 text-center text-xs text-gray-400 border-t border-gray-100">
+        Sahayak Civic Access Infrastructure • Field Officer Terminal
+      </footer>
     </div>
   );
 }

@@ -96,8 +96,19 @@ export default function ApplicationDetailPage() {
 
         {/* Offline Verification Status */}
         {app.offline_verification_fields?.length > 0 && (
-          <div className="card">
-            <h3 className="font-bold text-gray-900 mb-4">🔍 {t('Physical Verification Items', 'भौतिक सत्यापन')}</h3>
+          <div className="card border-l-4 border-l-amber-500">
+            <h3 className="font-bold text-gray-900 mb-2">🔍 {t('Physical Verification Items', 'भौतिक सत्यापन वस्तुएं')}</h3>
+            <p className="text-xs text-gray-600 leading-relaxed mb-4">
+              {t(
+                'Action Required: This program requires on-site document inspection. Present your original records alongside your sovereign Sahayak QR Card at your nearest Taluka/District Seva Kendra. The designated verification officer will authenticate your documents cryptographically.',
+                'आवश्यक कार्रवाई: इस योजना के लिए दस्तावेजों का भौतिक सत्यापन आवश्यक है। अपने निकटतम तालुका/जिला सेवा केंद्र में मूल दस्तावेजों और सहायक क्यूआर कार्ड के साथ उपस्थित हों।'
+              )}
+            </p>
+            <div className="mb-4">
+              <Link href="/citizen/qr-card" className="btn-secondary text-xs px-3 py-1.5 inline-flex items-center gap-1.5">
+                <span>📱</span> {t('View Sahayak QR Card for Verification', 'सत्यापन के लिए क्यूआर कार्ड देखें')}
+              </Link>
+            </div>
             <div className="space-y-3">
               {app.offline_verification_fields.map((f: any) => (
                 <div key={f.field_id} className={`p-3 rounded-xl border ${

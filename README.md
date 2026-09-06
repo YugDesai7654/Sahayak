@@ -1,97 +1,155 @@
-# Sahayak
+# Sahayak: Sovereign Civic Welfare & Scheme Discovery Platform
 
-## Government Scheme Auto-Matcher, Auto-Filer, and Civic Identity Wallet
+> **Automated Scheme Eligibility Matching, Paperless Application Tracking, and Cryptographic Offline Civic Identity Wallet for India.**
 
-Sahayak is a comprehensive platform built to streamline the process of discovering, matching, and applying for government schemes. It empowers citizens with a secure, portable Civic Identity Wallet, complete with offline QR-based verification, and equips government officers and administrators with robust tools for managing schemes, processing applications, and issuing approvals efficiently.
+*Looking for a non-technical introduction? Read the [Plain English Project Guide (EXPLANATION.md)](./EXPLANATION.md).*
 
-## 🚀 Features
+---
 
-### For Citizens
-*   **Civic Identity Wallet:** A secure, centralized repository for all your civic details and documents.
-*   **Secure QR Verification:** Generates a lifetime valid, RS256 cryptographically signed QR code for offline verification of citizen credentials.
-*   **Auto-Matcher (NLP Powered):** Automatically suggests the most relevant government schemes based on the citizen's profile using advanced Natural Language Processing (NLP) techniques.
-*   **Auto-Filer:** Streamlines the application process by auto-filling fields using wallet data, reducing manual entry errors.
-*   **Application Tracking & Notifications:** Keep track of applied schemes and receive real-time notifications on application status updates.
+## 🏛️ Project Overview
 
-### For Officers & Administrators
-*   **Role-Based Access Control:** Distinct roles for National, State, and District level administrators and officers.
-*   **Application Processing Workflow:** Dedicated dashboards for officers to review, verify, and approve/reject citizen applications.
-*   **Scheme Management:** Ability to create, update, and manage the lifecycle of various government schemes.
-*   **Analytics & Reporting:** Comprehensive dashboards visualizing data relevant to the admin's specific scope (National, State, or District).
-*   **Document Verification via OCR:** Integrated Optical Character Recognition (OCR) for automated parsing and initial verification of uploaded documents.
+**Sahayak** is an offline-first civic welfare platform inspired by IndiaStack, DIGIT, and the Digital Personal Data Protection (DPDP) framework. It bridges the critical last-mile gap between citizens and statutory welfare entitlements by:
+
+1. **Eliminating Administrative Asymmetry**: Evaluating citizen socioeconomic profiles (income, land holding, caste category, occupation) against active Central and State welfare rules to identify 100% of entitled benefits without touts or middlemen.
+2. **Sovereign Offline Identity (RS256 QR Wallet)**: Issuing tamper-proof, cryptographically signed credentials that field verification officers can inspect at remote Taluka Seva Kendras without continuous internet connectivity.
+3. **Paperless Application Dossiers**: Streamlining document submission with built-in OCR parsing, digital audit trails, and multi-tier administrative governance (National, State, and District levels).
+
+---
+
+## 🚀 Key Modules & Capabilities
+
+### 1. Citizen Portal
+* **Personal Civic Wallet**: Encrypted household profile repository capturing identity, jurisdiction, land holding, and family dependents.
+* **Automated Scheme Matching Engine**: Rule evaluation engine categorizing schemes into *Fully Eligible* and *Near Miss* opportunities with actionable qualification tips.
+* **Benefit Calculator**: Real-time entitlement simulator calculating estimated annual financial aid in rupees per family.
+* **Cryptographic QR Credential**: Printable physical-grade smart card embedding a 2048-bit RS256 asymmetric signature verifiable offline.
+* **Application Dossier**: Real-time lifecycle tracking across draft, submitted, pending offline verification, under review, and approved states.
+
+### 2. Field Officer Inspection Terminal
+* **Dual Viewfinder Scanner**: Optical camera QR reader with automated reticle and manual hardware 2D barcode scanner input support.
+* **Offline RS256 Verification**: Verifies digital signatures in under two seconds using public keys without connecting to a central database.
+* **Direct Sahayak ID Fallback**: Manual identifier lookup for damaged or torn physical identity cards.
+* **Physical Clause Inspection**: One-click verification and rejection workflows with mandatory statutory audit logs.
+
+### 3. Administrative Governance Console
+* **Multi-Tier Role Hierarchy**: Distinct scopes for National Super Admins, State Admins, District Collectors, and Taluka Officers.
+* **Scheme Rule Builder**: Configure eligibility logic, required documentary evidence, and benefit frequencies.
+* **Officer Provisioning & Audit Trails**: Comprehensive system logs tracking all credential inspections and approval decisions.
+
+---
 
 ## 🛠️ Technology Stack
 
-### Frontend
-*   **Framework:** [Next.js](https://nextjs.org/) (React 19)
-*   **Styling:** [TailwindCSS v4](https://tailwindcss.com/)
-*   **State Management:** [Zustand](https://github.com/pmndrs/zustand)
-*   **Offline Storage:** [Dexie.js](https://dexie.org/) (IndexedDB wrapper)
-*   **Form Handling & Validation:** React Hook Form + Zod
-*   **QR Capabilities:** `html5-qrcode` (Scanning) & `qrcode.react` (Generation)
-*   **Typography & Icons:** Modern web standard integrations.
+| Layer | Technologies |
+|---|---|
+| **Frontend** | Next.js 16 (React 19), Tailwind CSS v4, Zustand, Dexie.js (IndexedDB), QRCode.react, Html5-QRCode |
+| **Design System** | IndiaStack/DIGIT inspired Soft Structuralism, Double-Bezel nested architecture, Plus Jakarta Sans |
+| **Backend API** | FastAPI (Python 3.11), Pydantic v2, Motor (Async MongoDB), Beanie ODM |
+| **Security** | Asymmetric RS256 JWT keypairs (cryptography/hazmat, RSA 2048-bit), Passlib (bcrypt) |
+| **Document & OCR** | Tesseract OCR (English and Hindi models: `tesseract-ocr`, `tesseract-ocr-hin`, `tesseract-ocr-eng`), ReportLab (PDF Generation) |
+| **Infrastructure** | Docker, Docker Compose, MongoDB 7, Multi-stage alpine/slim images |
 
-### Backend
-*   **Framework:** [FastAPI](https://fastapi.tiangolo.com/) (Python)
-*   **Database:** MongoDB (via Motor and [Beanie ODM](https://beanie-odm.dev/))
-*   **Security & Auth:** JWT (cryptographically signed using RS256 with asymmetric key pairs), Passlib (bcrypt)
-*   **NLP & Machine Learning:** spaCy, scikit-learn, numpy (for semantic matching and scheme recommendations)
-*   **OCR & File Processing:** pytesseract, Pillow, ReportLab (for PDF generation)
-*   **Validation:** Pydantic v2
+---
 
-## 📦 Local Development Setup
+## ⚡ Quick Start: Single-Command Docker Setup
 
-### Prerequisites
-*   Node.js (v18+ recommended)
-*   Python 3.10+
-*   MongoDB Instance (Local or Atlas)
-*   Tesseract OCR (must be installed on your system for OCR capabilities to work)
+Sahayak runs on any machine with Docker and Docker Compose installed.
 
-### 1. Clone the repository
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/YugDesai7654/Sahayak.git
 cd Sahayak
 ```
 
-### 2. Configure Environment Variables
-Navigate to the `backend/` and `frontend/` directories and create the respective `.env` files based on `.env.example` templates if they exist, or set up the underlying MongoDB connection URL and application URIs.
+### 2. Start the Platform
 
-### 3. Start the application
-The project includes a unified runner script to spin up both the Next.js frontend and the FastAPI backend concurrently. 
-
-**Using the launch script (Unix/Mac):**
-```bash
-./run.sh
-```
-*This script will automatically create a Python virtual environment, install backend dependencies, install frontend node modules, and boot both servers.*
-
-**Alternatively, to run manually:**
-
-**Backend:**
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+#### On Windows (PowerShell)
+```powershell
+.\docker-run.ps1
 ```
 
-**Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
+#### On Windows (Command Prompt or Double-Click)
+```cmd
+docker-run.bat
 ```
 
-### 4. Access the Application
-*   Frontend Application: `http://localhost:3000`
-*   Backend API Swagger Docs: `http://localhost:8000/docs`
+#### On macOS / Linux / Git Bash / WSL
+```bash
+./docker-run.sh
+```
 
-## 🔒 Security Architecture
-Sahayak prioritizes data privacy and integrity. 
-*   All user passwords and sensitive fields are hashed using `bcrypt` prior to database storage.
-*   System JWTs are generated using an **RS256 Asymmetric Keypair** (Public/Private Keys). 
-*   The Citizen Identity QR code embeds an immutable JWT payload that can be scanned and verified by any authorized officer entirely offline using the publicly available key.
+#### Universal Docker Command (Any Operating System)
+```bash
+docker compose up --build
+```
 
 ---
-*Built with ❤️ to streamline civic experiences.*
+
+## 🌐 Application Port Allocations
+
+| Service | Port | Description |
+|---|---|---|
+| **Frontend Portal** | `http://localhost:3000` | Citizen desk, Officer scanner, and Admin portals |
+| **Backend API** | `http://localhost:8000` | FastAPI service with automatic RS256 key generation |
+| **API Documentation** | `http://localhost:8000/docs` | Interactive OpenAPI / Swagger UI |
+| **Database** | `localhost:27017` | MongoDB 7 with persistent volume storage (`mongo_data`) |
+
+---
+
+## 🔑 Pre-Seeded Test Credentials
+
+Each login page features a one-click **"Use"** button to automatically populate credentials:
+
+| Portal | Email | Password | Role Description |
+|---|---|---|---|
+| **Citizen** (`/citizen/auth/login`) | `test@citizen.in` | `Citizen@123` | Registered citizen (Ramesh Solanki, Gujarat) |
+| **Field Officer** (`/officer/auth/login`) | `officer@sahayak.gov.in` | `Officer@123` | Verification officer (Daskroi Taluka Office) |
+| **District Admin** (`/admin/auth/login`) | `admin@sahayak.gov.in` | `Admin@123` | System administrator (National scope) |
+
+*(Note: Password aliases such as `Password123`, `Officer123`, and `Admin123` are also accepted for test accounts).*
+
+---
+
+## 📂 Project Structure
+
+```
+Sahayak/
+├── docker-compose.yml          # Container orchestration (MongoDB, Backend, Frontend)
+├── docker-run.sh               # Unix/macOS launcher (auto-cleans ports and starts compose)
+├── docker-run.bat              # Windows batch launcher (Command Prompt / double-click)
+├── docker-run.ps1              # Windows PowerShell launcher (native port clearing)
+├── .gitattributes              # Guarantees LF line endings for Docker scripts on Windows
+├── EXPLANATION.md              # Non-technical guide for citizens and public stakeholders
+├── backend/
+│   ├── Dockerfile              # Python 3.11-slim with Tesseract OCR (eng + hin)
+│   ├── entrypoint.sh           # Auto-seeds default schemes and test accounts
+│   ├── seed.py                 # Seeds 15+ statutory schemes, admins, officers, citizens
+│   └── app/
+│       ├── api/routes/         # Auth, Citizen, Officer, Admin, Schemes, Applications
+│       ├── core/               # RS256 crypto, security dependencies, database config
+│       ├── models/             # Beanie ODM documents (User, Officer, Admin, Scheme, App)
+│       └── services/           # Auth, NLP matching, OCR extraction, PDF generation
+└── frontend/
+    ├── Dockerfile              # Node 20-alpine multi-stage build (Turbopack optimized)
+    └── src/
+        ├── app/                # Next.js App Router (Citizen, Officer, Admin workflows)
+        ├── lib/                # API client with FastAPI 422 parser, rule matching engine
+        ├── store/              # Zustand auth and offline state management
+        └── types/              # TypeScript interfaces for schemes, applications, and users
+```
+
+---
+
+## 🔒 Security Architecture
+
+* **Asymmetric RS256 Keypair**: The backend generates a 2048-bit RSA keypair on first run (`backend/keys/private.pem` and `public.pem`). Private keys never leave the backend container; public keys are distributed for local verification.
+* **Zero-Knowledge Offline QR Verification**: The Citizen QR code embeds an asymmetric JWT payload containing verified identity claims. Field officers verify signatures offline without central server dependencies.
+* **Dual Authentication Support**: Endpoints support both HTTP-only session cookies and `Authorization: Bearer <token>` headers for third-party client interoperability.
+* **Audit Transparency**: Statutory decisions record officer identifiers, physical verification timestamps, and clause rejection notes.
+
+---
+
+## 📄 Documentation & Guides
+
+* **[Plain English Guide (EXPLANATION.md)](./EXPLANATION.md)**: Conceptual guide for citizens, officials, and non-programmers.
+* **[Backend OpenAPI Documentation](http://localhost:8000/docs)**: Complete schema contracts and interactive API endpoints.

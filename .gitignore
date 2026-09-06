@@ -10,3 +10,18 @@ __pycache__/
 # Node
 node_modules/
 backend/.venv39/
+
+# Skills and AI agent artifacts
+.agents/
+.claude/
+skills-lock.json
+
+# Keys and sensitive credentials
+*.pem
+*.key
+keys/
+backend/keys/
+
+# OS artifacts
+.DS_Store
+Thumbs.db

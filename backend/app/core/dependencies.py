@@ -8,8 +8,13 @@ from app.models.admin import Admin
 
 
 async def get_current_user_from_cookie(request: Request) -> dict:
-    """Extract and verify JWT from httpOnly cookie."""
+    """Extract and verify JWT from httpOnly cookie or Authorization header."""
     token = request.cookies.get("access_token")
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -58,6 +63,13 @@ async def require_admin(payload: dict = Depends(get_current_user_from_cookie)) -
     if not admin or not admin.auth.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin account inactive or not found")
     return admin
+
+async def require_citizen_or_officer(payload: dict = Depends(get_current_user_from_cookie)) -> dict:
+    """Require authenticated citizen, officer, or admin."""
+    role = payload.get("role")
+    if role not in ("citizen", "officer", "admin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    return payload
 
 
 def require_admin_tier(allowed_tiers: List[str]):

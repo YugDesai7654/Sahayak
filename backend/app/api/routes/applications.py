@@ -1,14 +1,13 @@
+import io
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException
+from bson import ObjectId
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-import io
-
-from app.core.dependencies import require_citizen, require_officer
+from app.core.dependencies import require_citizen, require_officer, require_citizen_or_officer
 from app.models.user import User
 from app.models.officer import Officer
 from app.models.application import Application
-from app.services.application_service import create_application, verify_offline_field
 from app.services.pdf_service import generate_application_pdf
 
 router = APIRouter()
@@ -56,13 +55,18 @@ async def submit_application(req: CreateApplicationRequest, user: User = Depends
 
 
 @router.get("/{app_id}")
-async def get_application(app_id: str, user: User = Depends(require_citizen)):
+async def get_application(app_id: str, auth_actor: dict = Depends(require_citizen_or_officer)):
     """Get application detail with offline status."""
     app = await Application.find_one(Application.application_id == app_id)
-    if not app or app.user_id != str(user.id):
+    if not app:
         raise HTTPException(status_code=404, detail="Application not found")
+    role = auth_actor.get("role")
+    sub = auth_actor.get("sub")
+    if role == "citizen":
+        user = await User.find_one(User.sahayak_id == sub)
+        if not user or app.user_id != str(user.id):
+            raise HTTPException(status_code=403, detail="Not authorized to view this application")
     return _app_to_full_dict(app)
-
 
 @router.put("/{app_id}")
 async def update_draft(app_id: str, req: CreateApplicationRequest, user: User = Depends(require_citizen)):
@@ -104,17 +108,34 @@ async def verify_field(app_id: str, req: VerifyFieldRequest, officer: Officer = 
 
 
 @router.get("/{app_id}/pdf")
-async def download_application_pdf(app_id: str, user: User = Depends(require_citizen)):
+async def download_application_pdf(app_id: str, auth_actor: dict = Depends(require_citizen_or_officer)):
     """Download application summary as PDF."""
     app = await Application.find_one(Application.application_id == app_id)
-    if not app or app.user_id != str(user.id):
+    if not app:
         raise HTTPException(status_code=404, detail="Application not found")
+
+    role = auth_actor.get("role")
+    sub = auth_actor.get("sub")
+
+    citizen = None
+    try:
+        citizen = await User.get(ObjectId(app.user_id))
+    except Exception:
+        pass
+    if not citizen and role == "citizen":
+        citizen = await User.find_one(User.sahayak_id == sub)
+
+    if role == "citizen" and (not citizen or app.user_id != str(citizen.id)):
+        raise HTTPException(status_code=403, detail="Not authorized to download this application")
+
+    citizen_name = (citizen.profile.name if citizen and citizen.profile else None) or "Citizen"
+    sahayak_id = (citizen.sahayak_id if citizen else None) or "N/A"
 
     pdf_bytes = generate_application_pdf(
         application_id=app.application_id,
         scheme_name=app.scheme_name,
-        citizen_name=user.profile.name or "Citizen",
-        sahayak_id=user.sahayak_id,
+        citizen_name=citizen_name,
+        sahayak_id=sahayak_id,
         form_data=app.digital_form_data,
         status=app.overall_status,
         submitted_at=app.submitted_at.strftime("%d-%m-%Y") if app.submitted_at else "N/A"
@@ -124,7 +145,6 @@ async def download_application_pdf(app_id: str, user: User = Depends(require_cit
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=application-{app_id}.pdf"}
     )
-
 
 def _app_to_dict(a: Application) -> dict:
     return {

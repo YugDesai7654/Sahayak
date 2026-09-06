@@ -115,7 +115,7 @@ def generate_application_pdf(
 
     # Header
     c.setFont("Helvetica-Bold", 14)
-    c.drawCentredString(width / 2, height - 25 * mm, "SAHAYAK — Application Summary")
+    c.drawCentredString(width / 2, height - 25 * mm, "SAHAYAK - Application Summary")
 
     c.setFont("Helvetica", 10)
     y = height - 40 * mm

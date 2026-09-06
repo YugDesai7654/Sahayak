@@ -1,0 +1,15 @@
+.venv
+venv
+env
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+keys/*.pem
+.git
+.gitignore
+.env
+.env.*
+*.swp
+.DS_Store

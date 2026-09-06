@@ -59,8 +59,19 @@ export default function FamilyWalletPage() {
       </div></nav>
 
       <main className="max-w-2xl mx-auto px-6 py-8 page-enter">
-        {msg && <div className={`mb-4 px-4 py-3 rounded-xl text-sm ${msg.includes('Error') ? 'bg-red-50 text-danger' : 'bg-green-50 text-success'}`}>{msg}</div>}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">
+            {t('Household Member Registry', 'पारिवारिक सदस्य पंजी')}
+          </h2>
+          <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+            {t(
+              'Major welfare entitlements (including PM-JAY health coverage, NFSA food rations, and rural housing grants) evaluate aggregate household structure. Registering dependents unlocks composite benefits and generates individual sovereign QR cards.',
+              'प्रमुख कल्याणकारी योजनाएं (जैसे आयुष्मान भारत स्वास्थ्य बीमा, खाद्य राशन और आवास योजना) पारिवारिक इकाई के आधार पर तय होती हैं। आश्रितों को पंजीकृत करने से समग्र लाभ मिलते हैं और प्रत्येक सदस्य के लिए क्यूआर कार्ड जारी होता है।'
+            )}
+          </p>
+        </div>
 
+        {msg && <div className={`mb-4 px-4 py-3 rounded-xl text-sm ${msg.includes('Error') ? 'bg-red-50 text-danger' : 'bg-green-50 text-success'}`}>{msg}</div>}
         {showAdd && (
           <div className="card mb-6 border-2 border-primary/20">
             <h2 className="text-lg font-bold text-gray-900 mb-4">{t('Add Family Member', 'परिवार सदस्य जोड़ें')}</h2>
@@ -88,10 +99,18 @@ export default function FamilyWalletPage() {
         )}
 
         {members.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">👨‍👩‍👧‍👦</div>
-            <p className="text-xl text-gray-600 font-semibold">{t('No family members added', 'कोई सदस्य नहीं जोड़ा')}</p>
-            <p className="text-gray-400 mt-2">{t('Add family members to generate QR cards for them too', 'उनके QR कार्ड बनाने के लिए सदस्य जोड़ें')}</p>
+          <div className="text-center py-16 card border-dashed border-2 border-gray-200">
+            <div className="text-5xl mb-3">👨‍👩‍👧‍👦</div>
+            <p className="text-lg text-gray-800 font-semibold">{t('No family members registered yet', 'अभी तक कोई पारिवारिक सदस्य पंजीकृत नहीं है')}</p>
+            <p className="text-sm text-gray-500 max-w-md mx-auto mt-2 leading-relaxed">
+              {t(
+                'Add your spouse, dependent children, or elderly parents to ensure your household qualifies for pooled welfare coverage such as PM-JAY and ration subsidies.',
+                'अपने पति/पत्नी, आश्रित बच्चों या बुजुर्ग माता-पिता को जोड़ें ताकि आपका परिवार आयुष्मान भारत और राशन जैसी समग्र योजनाओं के लिए अर्हता प्राप्त कर सके।'
+              )}
+            </p>
+            <button onClick={() => setShowAdd(true)} className="btn-primary mt-5 text-sm">
+              + {t('Register First Member', 'पहला सदस्य पंजीकृत करें')}
+            </button>
           </div>
         ) : (
           <div className="space-y-4">

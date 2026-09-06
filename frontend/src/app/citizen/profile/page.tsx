@@ -97,6 +97,10 @@ export default function ProfilePage() {
 
         <div className="card space-y-4">
           {step === 0 && <>
+            <div className="border-b pb-3 mb-2">
+              <h3 className="font-bold text-gray-900 text-base">{t('Personal Identity Record', 'व्यक्तिगत पहचान रिकॉर्ड')}</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{t('Official identity details matching your official records. Used to generate your offline sovereign QR card.', 'आधिकारिक पहचान विवरण। आपके ऑफ़लाइन संप्रभु क्यूआर कार्ड को जनरेट करने के लिए उपयोग किया जाता है।')}</p>
+            </div>
             <Field form={form} up={up} label={t('Full Name', 'पूरा नाम')} field="name" />
             <Field form={form} up={up} label={t('Date of Birth', 'जन्म तिथि')} field="dob" type="date" />
             <Field form={form} up={up} label={t('Gender', 'लिंग')} field="gender" options={[{value:'male',label:'Male'},{value:'female',label:'Female'},{value:'other',label:'Other'}]} />
@@ -104,6 +108,10 @@ export default function ProfilePage() {
             <Field form={form} up={up} label={t('Phone', 'फ़ोन')} field="phone" />
           </>}
           {step === 1 && <>
+            <div className="border-b pb-3 mb-2">
+              <h3 className="font-bold text-gray-900 text-base">{t('Residential Jurisdiction', 'निवास क्षेत्राधिकार')}</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{t('Geographic boundaries determine state and district specific welfare schemes and allocate your field verification officer.', 'भौगोलिक क्षेत्राधिकार राज्य और जिला विशिष्ट कल्याणकारी योजनाएं निर्धारित करता है।')}</p>
+            </div>
             <Field form={form} up={up} label={t('State', 'राज्य')} field="state" options={STATES.map(s => ({value:s,label:s}))} />
             <Field form={form} up={up} label={t('District', 'जिला')} field="district" options={(STATE_DISTRICTS[form.state] || []).map((d: string) => ({value:d,label:d}))} />
             <Field form={form} up={up} label={t('Taluka', 'तहसील')} field="taluka" />
@@ -111,6 +119,10 @@ export default function ProfilePage() {
             <Field form={form} up={up} label={t('Pincode', 'पिनकोड')} field="pincode" />
           </>}
           {step === 2 && <>
+            <div className="border-b pb-3 mb-2">
+              <h3 className="font-bold text-gray-900 text-base">{t('Financial & Ration Information', 'वित्तीय एवं राशन जानकारी')}</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{t('Required for Direct Benefit Transfer (DBT) subsidies, food rations, and BPL social security programs.', 'प्रत्यक्ष लाभ अंतरण (DBT) सब्सिडी, खाद्य राशन और सामाजिक सुरक्षा कार्यक्रमों के लिए आवश्यक।')}</p>
+            </div>
             <Field form={form} up={up} label={t('Annual Income (₹)', 'वार्षिक आय (₹)')} field="income_annual" type="number" />
             <Field form={form} up={up} label={t('Income Source', 'आय स्रोत')} field="income_source" />
             <Field form={form} up={up} label={t('BPL Status', 'बीपीएल स्थिति')} field="is_bpl" type="checkbox" />
@@ -120,6 +132,10 @@ export default function ProfilePage() {
             <Field form={form} up={up} label={t('IFSC Code', 'IFSC कोड')} field="ifsc_code" />
           </>}
           {step === 3 && <>
+            <div className="border-b pb-3 mb-2">
+              <h3 className="font-bold text-gray-900 text-base">{t('Socioeconomic & Occupational Profile', 'सामाजिक-आर्थिक एवं व्यावसायिक प्रोफ़ाइल')}</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{t('Used to identify agricultural subsidies, artisan credit schemes, student scholarships, and affirmative benefits.', 'कृषि सब्सिडी, कारीगर ऋण योजनाएं, छात्रवृत्ति और लक्षित लाभों की पहचान के लिए आवश्यक।')}</p>
+            </div>
             <Field form={form} up={up} label={t('Caste Category', 'जाति श्रेणी')} field="caste_category" options={CASTES} />
             <Field form={form} up={up} label={t('Religion', 'धर्म')} field="religion" />
             <Field form={form} up={up} label={t('Occupation', 'व्यवसाय')} field="occupation" />
@@ -130,8 +146,14 @@ export default function ProfilePage() {
             <Field form={form} up={up} label={t('Education Level', 'शिक्षा स्तर')} field="education_level" />
           </>}
           {step === 4 && <>
-            <p className="text-gray-600 text-sm">{t('Add family members to match them with schemes too.', 'योजना मिलान के लिए परिवार सदस्य जोड़ें।')}</p>
-            <Link href="/citizen/family" className="btn-primary inline-block text-sm">{t('Manage Family Members →', 'परिवार प्रबंधन →')}</Link>
+            <div className="border-b pb-3 mb-2">
+              <h3 className="font-bold text-gray-900 text-base">{t('Household Registry Sync', 'पारिवारिक पंजी समन्वय')}</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{t('Pooled welfare programs like Ayushman Bharat evaluate composite family data.', 'आयुष्मान भारत जैसे सामूहिक कल्याणकारी कार्यक्रम समग्र पारिवारिक डेटा का मूल्यांकन करते हैं।')}</p>
+            </div>
+            <p className="text-gray-600 text-sm leading-relaxed">{t('Register dependents, spouse, or elderly family members in your Family Wallet to calculate collective household entitlement and generate sub-credentials.', 'पारिवारिक वॉलेट में आश्रितों, जीवनसाथी या बुजुर्ग परिजनों को जोड़ें ताकि समग्र लाभों की गणना की जा सके।')}</p>
+            <div className="pt-2">
+              <Link href="/citizen/family" className="btn-primary inline-flex items-center gap-2 text-sm">{t('Open Family Wallet Registry', 'पारिवारिक पंजी खोलें')}</Link>
+            </div>
           </>}
 
           <div className="flex gap-3 pt-4">

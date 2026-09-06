@@ -265,7 +265,7 @@ async def update_scheme(scheme_id: str, req: CreateSchemeRequest, admin: Admin =
 
 @router.delete("/schemes/{scheme_id}")
 async def deactivate_scheme(scheme_id: str, admin: Admin = Depends(require_admin)):
-    """Soft delete — deactivate scheme."""
+    """Soft delete - deactivate scheme."""
     scheme = await Scheme.find_one(Scheme.scheme_id == scheme_id)
     if not scheme:
         raise HTTPException(status_code=404, detail="Scheme not found")
@@ -388,7 +388,7 @@ async def deactivate_admin(admin_id: str, admin: Admin = Depends(require_admin))
 
 @router.post("/officers")
 async def create_officer(req: CreateOfficerRequest, admin: Admin = Depends(require_admin)):
-    """Create officer — district admins only."""
+    """Create officer - district admins only."""
     if admin.tier != "district":
         raise HTTPException(status_code=403, detail="Only district admins can create officers")
 
@@ -424,7 +424,7 @@ async def create_officer(req: CreateOfficerRequest, admin: Admin = Depends(requi
 
 @router.get("/officers")
 async def list_officers(admin: Admin = Depends(require_admin)):
-    """List officers — district admins only see their district."""
+    """List officers - district admins only see their district."""
     if admin.tier != "district":
         raise HTTPException(status_code=403, detail="Only district admins can manage officers")
 

@@ -35,12 +35,33 @@ export default function ApplicationsPage() {
       </div></nav>
 
       <main className="max-w-4xl mx-auto px-6 py-8 page-enter">
+        <div className="mb-6">
+          <h2 className="text-xl font-bold text-gray-900">
+            {t('Application Dossier & Status Tracking', 'आवेदन स्थिति एवं रिकॉर्ड')}
+          </h2>
+          <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+            {t(
+              'Real-time statutory status of your direct welfare applications, physical verification inspection notes, and downloadable certified PDF summaries.',
+              'आपके प्रत्यक्ष कल्याणकारी आवेदनों की वास्तविक समय स्थिति, भौतिक सत्यापन नोट्स और प्रमाणित पीडीएफ सारांश।'
+            )}
+          </p>
+        </div>
+
         {apps.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">📋</div>
-            <p className="text-xl text-gray-600 font-semibold">{t('No applications yet', 'अभी कोई आवेदन नहीं')}</p>
-            <p className="text-gray-400 mt-2">{t('Browse eligible schemes to get started', 'शुरू करने के लिए पात्र योजनाएं देखें')}</p>
-            <Link href="/citizen/schemes" className="btn-primary inline-block mt-6">{t('Browse Schemes', 'योजनाएं देखें')} →</Link>
+          <div className="text-center py-16 card border-dashed border-2 border-gray-200">
+            <div className="text-5xl mb-3">📋</div>
+            <p className="text-lg text-gray-800 font-bold">{t('No Active Applications Recorded', 'कोई सक्रिय आवेदन दर्ज नहीं है')}</p>
+            <p className="text-sm text-gray-500 max-w-md mx-auto mt-2 leading-relaxed">
+              {t(
+                'You have not submitted applications for any government schemes yet. Explore schemes matching your profile to file pre-populated digital forms.',
+                'आपने अभी तक किसी भी सरकारी योजना के लिए आवेदन नहीं किया है। पहले से भरे हुए डिजिटल फॉर्म जमा करने के लिए अपनी प्रोफ़ाइल से मेल खाने वाली योजनाएं देखें।'
+              )}
+            </p>
+            <div className="mt-5">
+              <Link href="/citizen/schemes" className="btn-primary text-sm inline-flex items-center gap-2">
+                {t('Explore Matching Schemes', 'सुपात्र योजनाएं खोजें')}
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

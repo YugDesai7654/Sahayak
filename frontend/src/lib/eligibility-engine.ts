@@ -1,7 +1,7 @@
 import { UserProfile, EligibilityRule, SchemeMatchResult } from '@/types';
 
 /**
- * Offline eligibility engine — runs entirely in the browser.
+ * Offline eligibility engine - runs entirely in the browser.
  * Evaluates all schemes against a citizen's profile.
  */
 

@@ -205,7 +205,7 @@ async def get_smart_suggestions(
         match_reasons = []
         priority = "medium"
 
-        # Scope check — citizen should only see schemes in their region
+        # Scope check: citizen should only see schemes in their region
         if not _scope_matches(scheme, profile):
             continue
 
@@ -221,7 +221,7 @@ async def get_smart_suggestions(
                 match_reasons.append(f"Near miss: {tip}" if tip else "You nearly qualify for this scheme")
             priority = "medium"
         else:
-            # Only NLP match — check if similarity is above threshold
+            # Only NLP match: check if similarity is above threshold
             if nlp_score < similarity_threshold:
                 continue
             match_reasons.append("Matched based on your profile characteristics")

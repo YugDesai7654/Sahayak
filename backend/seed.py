@@ -85,20 +85,14 @@ async def seed():
     print("  ✅ Daskroi taluka admin created")
 
     # Also create original admin and Rajasthan test officer
-    Admin(
+    admin_system = Admin(
         admin_id="ADM-NAT-ALL-000",
         auth=AdminAuth(email="admin@sahayak.gov.in", password_hash=hash_password("Admin@123")),
         name="System Admin",
         tier="national",
         jurisdiction=AdminJurisdiction(),
     )
-    await Admin.find_one(Admin.admin_id == "ADM-NAT-ALL-000") or await Admin(
-        admin_id="ADM-NAT-ALL-000",
-        auth=AdminAuth(email="admin@sahayak.gov.in", password_hash=hash_password("Admin@123")),
-        name="System Admin",
-        tier="national",
-        jurisdiction=AdminJurisdiction(),
-    ).insert()
+    await admin_system.insert()
 
     # ── 2. Officers ────────────────────────────
     off_ahm = Officer(
@@ -114,6 +108,19 @@ async def seed():
         created_by_district_admin_id="ADM-DIS-AHM-001"
     )
     await off_ahm.insert()
+    off_gen = Officer(
+        officer_id="OFF-GEN-001",
+        auth=OfficerAuth(email="officer@sahayak.gov.in", password_hash=hash_password("Officer@123")),
+        name="Rajesh Patel",
+        designation="Verification Officer",
+        office_name="Daskroi Taluka Office",
+        office_address="Block Development Office, Daskroi, Ahmedabad",
+        state="Gujarat",
+        district="Ahmedabad",
+        department="Revenue",
+        created_by_district_admin_id="ADM-DIS-AHM-001"
+    )
+    await off_gen.insert()
 
     off_raj = Officer(
         officer_id="OFF-JAI-001",

@@ -13,7 +13,26 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: 'Request failed' }));
-    throw new Error(error.detail || `HTTP ${res.status}`);
+    let message = 'Request failed';
+    if (typeof error.detail === 'string') {
+      message = error.detail;
+    } else if (Array.isArray(error.detail)) {
+      message = error.detail
+        .map((d: any) => {
+          if (typeof d === 'string') return d;
+          const field = Array.isArray(d.loc) ? d.loc.filter((p: any) => p !== 'body').join(' ') : '';
+          const msg = d.msg || 'Invalid value';
+          return field ? `${field}: ${msg}` : msg;
+        })
+        .join('; ');
+    } else if (error.message && typeof error.message === 'string') {
+      message = error.message;
+    } else if (error.detail) {
+      message = JSON.stringify(error.detail);
+    } else {
+      message = `HTTP ${res.status}`;
+    }
+    throw new Error(message);
   }
 
   return res.json();
